@@ -20,6 +20,9 @@ app.use('/api/admins', adminRouter);
 const profileRouter = require('./routes/profile');
 app.use('/api/profile', profileRouter);
 
+const rentalPostRouter = require('./routes/rentalPost');
+app.use('/api/rental-posts', rentalPostRouter);
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
