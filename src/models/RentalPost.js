@@ -114,7 +114,7 @@ class RentalPost {
         return result.rows[0];
     }
 
-    static async findAll(filters = {}) {
+    static async findAll(filters = {}, user = null) {
         let query = `
             SELECT rp.*, 
                    u.full_name as landlord_name,
@@ -126,51 +126,68 @@ class RentalPost {
             JOIN public.users u ON l.user_id = u.id
             LEFT JOIN public.provinces p ON rp.province_code = p.id
             LEFT JOIN public.wards w ON rp.ward_code = w.id
-            WHERE 1=1
         `;
         const values = [];
+        let whereClauses = [];
         let paramCount = 1;
 
+        // Role-based access control
+        if (user?.role === 'landlord') {
+            whereClauses.push(`(rp.status = 'approved' OR rp.landlord_id = $${paramCount})`);
+            values.push(user.id);
+            paramCount++;
+        } else if (user?.role !== 'admin') {
+            // Tenant, guest, or any other role only sees approved
+            whereClauses.push(`rp.status = 'approved'`);
+        }
+
+        // Admin can see all, so no clause is added, but can still use the filter below.
+
+        // General filters from query params
         if (filters.status) {
-            query += ` AND rp.status = $${paramCount}`;
+            whereClauses.push(`rp.status = $${paramCount}`);
             values.push(filters.status);
             paramCount++;
         }
 
         if (filters.landlord_id) {
-            query += ` AND rp.landlord_id = $${paramCount}`;
+            whereClauses.push(`rp.landlord_id = $${paramCount}`);
             values.push(filters.landlord_id);
             paramCount++;
         }
 
         if (filters.province_code) {
-            query += ` AND rp.province_code = $${paramCount}`;
+            whereClauses.push(`rp.province_code = $${paramCount}`);
             values.push(filters.province_code);
             paramCount++;
         }
 
         if (filters.min_price !== undefined) {
-            query += ` AND rp.price >= $${paramCount}`;
+            whereClauses.push(`rp.price >= $${paramCount}`);
             values.push(filters.min_price);
             paramCount++;
         }
 
         if (filters.max_price !== undefined) {
-            query += ` AND rp.price <= $${paramCount}`;
+            whereClauses.push(`rp.price <= $${paramCount}`);
             values.push(filters.max_price);
             paramCount++;
         }
 
         if (filters.min_area !== undefined) {
-            query += ` AND rp.area >= $${paramCount}`;
+            whereClauses.push(`rp.area >= $${paramCount}`);
             values.push(filters.min_area);
             paramCount++;
         }
 
         if (filters.max_area !== undefined) {
-            query += ` AND rp.area <= $${paramCount}`;
+            whereClauses.push(`rp.area <= $${paramCount}`);
             values.push(filters.max_area);
             paramCount++;
+        }
+
+        if (whereClauses.length > 0) {
+            query += ' WHERE ' + whereClauses.join(' AND ');
         }
 
         query += ' ORDER BY rp.created_at DESC';
@@ -190,21 +207,36 @@ class RentalPost {
         return result.rows;
     }
 
-    static async countAll(filters = {}) {
-        let query = 'SELECT COUNT(*) FROM public.rental_posts WHERE 1=1';
+    static async countAll(filters = {}, user = null) {
+        let query = 'SELECT COUNT(*) FROM public.rental_posts rp';
         const values = [];
+        let whereClauses = [];
         let paramCount = 1;
+        
+        // Role-based access control
+        if (user?.role === 'landlord') {
+            whereClauses.push(`(rp.status = 'approved' OR rp.landlord_id = $${paramCount})`);
+            values.push(user.id);
+            paramCount++;
+        } else if (user?.role !== 'admin') {
+            whereClauses.push(`rp.status = 'approved'`);
+        }
 
+        // General filters
         if (filters.status) {
-            query += ` AND status = $${paramCount}`;
+            whereClauses.push(`rp.status = $${paramCount}`);
             values.push(filters.status);
             paramCount++;
         }
 
         if (filters.landlord_id) {
-            query += ` AND landlord_id = $${paramCount}`;
+            whereClauses.push(`rp.landlord_id = $${paramCount}`);
             values.push(filters.landlord_id);
             paramCount++;
+        }
+        
+        if (whereClauses.length > 0) {
+            query += ' WHERE ' + whereClauses.join(' AND ');
         }
 
         const result = await db.query(query, values);

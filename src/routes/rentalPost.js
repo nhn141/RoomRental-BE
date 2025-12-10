@@ -6,17 +6,22 @@ const rentalPostController = require('../controllers/rentalPostController');
 const router = express.Router();
 
 // Tất cả routes đều yêu cầu đăng nhập
-router.get('/', isAuthenticated, (req, res) => rentalPostController.getAllPosts(req, res));
-router.get('/:id', isAuthenticated, (req, res) => rentalPostController.getPostById(req, res));
+router.use(isAuthenticated);
 
-// Landlord routes
-router.post('/', isAuthenticated, (req, res) => rentalPostController.createPost(req, res));
-router.put('/:id', isAuthenticated, (req, res) => rentalPostController.updatePost(req, res));
-router.delete('/:id', isAuthenticated, (req, res) => rentalPostController.deletePost(req, res));
-router.get('/my/posts', isAuthenticated, (req, res) => rentalPostController.getMyPosts(req, res));
+// GET routes
+router.get('/', (req, res) => rentalPostController.getAllPosts(req, res));
+router.get('/my/posts', (req, res) => rentalPostController.getMyPosts(req, res));
+router.get('/:id', (req, res) => rentalPostController.getPostById(req, res));
 
-// Admin routes
-router.put('/:id/approve', isAuthenticated, (req, res) => rentalPostController.approvePost(req, res));
-router.put('/:id/reject', isAuthenticated, (req, res) => rentalPostController.rejectPost(req, res));
+// POST routes
+router.post('/', (req, res) => rentalPostController.createPost(req, res));
+
+// PUT routes
+router.put('/approve', (req, res) => rentalPostController.approvePost(req, res));
+router.put('/reject', (req, res) => rentalPostController.rejectPost(req, res));
+router.put('/:id', (req, res) => rentalPostController.updatePost(req, res));
+
+// DELETE routes
+router.delete('/:id', (req, res) => rentalPostController.deletePost(req, res));
 
 module.exports = router;

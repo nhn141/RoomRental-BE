@@ -48,12 +48,13 @@ class RentalPostController {
         }
     }
 
-    // READ - Lấy tất cả bài đăng (có filter)
+    // READ - Lấy tất cả bài đăng (có filter và phân quyền)
     async getAllPosts(req, res) {
         try {
             // Yêu cầu đăng nhập
             if (!req.user) {
-                return res.status(401).json({ message: 'Vui lòng đăng nhập để xem bài đăng' });
+                // Vẫn cho phép người dùng không đăng nhập xem các bài đã approved
+                // Bằng cách truyền user=null vào model
             }
 
             const {
@@ -61,27 +62,21 @@ class RentalPostController {
                 min_area, max_area, limit, offset
             } = req.query;
 
-            const filters = {};
+            const filters = {
+                status,
+                province_code,
+                min_price: min_price ? parseFloat(min_price) : undefined,
+                max_price: max_price ? parseFloat(max_price) : undefined,
+                min_area: min_area ? parseFloat(min_area) : undefined,
+                max_area: max_area ? parseFloat(max_area) : undefined,
+                limit: limit ? parseInt(limit) : undefined,
+                offset: offset ? parseInt(offset) : undefined,
+            };
 
-            // Tenant và Landlord chỉ xem được bài approved
-            if (req.user.role === 'tenant' || req.user.role === 'landlord') {
-                filters.status = 'approved';
-            }
-            // Admin xem được tất cả
-            else if (req.user.role === 'admin') {
-                if (status) filters.status = status;
-            }
-
-            if (province_code) filters.province_code = province_code;
-            if (min_price) filters.min_price = parseFloat(min_price);
-            if (max_price) filters.max_price = parseFloat(max_price);
-            if (min_area) filters.min_area = parseFloat(min_area);
-            if (max_area) filters.max_area = parseFloat(max_area);
-            if (limit) filters.limit = parseInt(limit);
-            if (offset) filters.offset = parseInt(offset);
-
-            const posts = await RentalPost.findAll(filters);
-            const total = await RentalPost.countAll(filters);
+            // Logic phân quyền đã được chuyển vào Model
+            // Chỉ cần truyền `filters` và `req.user`
+            const posts = await RentalPost.findAll(filters, req.user);
+            const total = await RentalPost.countAll(filters, req.user);
 
             return res.json({
                 message: 'Lấy danh sách bài đăng thành công',
@@ -219,7 +214,12 @@ class RentalPostController {
                 return res.status(403).json({ message: 'Chỉ admin mới có quyền duyệt bài' });
             }
 
-            const { id } = req.params;
+            const { id } = req.body; // Đọc id từ body
+
+            if (!id) {
+                return res.status(400).json({ message: 'Vui lòng cung cấp id của bài đăng trong body' });
+            }
+
             const post = await RentalPost.findById(id);
 
             if (!post) {
@@ -249,8 +249,11 @@ class RentalPostController {
                 return res.status(403).json({ message: 'Chỉ admin mới có quyền từ chối bài' });
             }
 
-            const { id } = req.params;
-            const { rejection_reason } = req.body;
+            const { id, rejection_reason } = req.body; // Đọc id từ body
+
+            if (!id) {
+                return res.status(400).json({ message: 'Vui lòng cung cấp id của bài đăng trong body' });
+            }
 
             if (!rejection_reason) {
                 return res.status(400).json({ message: 'Vui lòng cung cấp lý do từ chối' });
@@ -260,6 +263,11 @@ class RentalPostController {
 
             if (!post) {
                 return res.status(404).json({ message: 'Không tìm thấy bài đăng' });
+            }
+
+            // RULE: Không thể reject bài đã được duyệt
+            if (post.status === 'approved') {
+                return res.status(400).json({ message: 'Không thể từ chối bài đăng đã được duyệt. Vui lòng sử dụng chức năng xóa.' });
             }
 
             const rejectedPost = await RentalPost.reject(id, req.user.id, rejection_reason);
