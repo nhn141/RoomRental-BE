@@ -190,15 +190,14 @@ class AuthController {
             // Lưu token vào database
             await User.setPasswordResetToken(email, resetTokenHash, passwordResetExpires);
 
-            // Gửi email cho người dùng
-            const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+            // Gửi email cho người dùng chứa mã token (không kèm link)
             try {
                 await sendEmail({
                     to: user.email,
-                    subject: 'Yêu cầu đặt lại mật khẩu (Hiệu lực 10 phút)',
-                    text: `Vui lòng truy cập liên kết sau để đặt lại mật khẩu của bạn. Liên kết sẽ hết hạn sau 10 phút: ${resetUrl}`,
+                    subject: 'Mã đặt lại mật khẩu (Hiệu lực 10 phút)',
+                    text: `Đây là mã đặt lại mật khẩu của bạn: ${resetToken}. Mã sẽ hết hạn sau 10 phút.`,
                 });
-                res.json({ message: 'Liên kết đặt lại mật khẩu đã được gửi đến email của bạn.' });
+                res.json({ message: 'Mã đặt lại mật khẩu đã được gửi đến email của bạn.' });
             } catch (err) {
                 console.error('Send Email Error:', err);
                 // Nếu gửi mail lỗi, rollback token trong db
