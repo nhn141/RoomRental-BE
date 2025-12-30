@@ -22,12 +22,14 @@ class Contract {
     }
 
     static async create(contractData) {
-        const { post_id, tenant_id, landlord_id, start_date, end_date, actual_price } = contractData;
+        const { post_id, tenant_id, landlord_id, start_date, end_date, monthly_rent, deposit_amount, contract_url } = contractData;
         const result = await db.query(
-            `INSERT INTO public.contracts (post_id, tenant_id, landlord_id, start_date, end_date, actual_price, status)
-             VALUES ($1, $2, $3, $4, $5, $6, 'active')
+            `INSERT INTO public.contracts 
+             (post_id, tenant_id, landlord_id, start_date, end_date, monthly_rent, deposit_amount, contract_url, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active')
              RETURNING *`,
-            [post_id, tenant_id, landlord_id, start_date, end_date || null, actual_price || null]
+            [post_id, tenant_id, landlord_id, start_date, end_date || null, monthly_rent || null, 
+             deposit_amount || 0, contract_url || null]
         );
         return result.rows[0];
     }
@@ -37,7 +39,7 @@ class Contract {
         const values = [];
         let paramCount = 1;
 
-        const allowedFields = ['start_date', 'end_date', 'actual_price', 'status'];
+        const allowedFields = ['start_date', 'end_date', 'monthly_rent', 'deposit_amount', 'contract_url', 'status'];
 
         allowedFields.forEach(field => {
             if (updates[field] !== undefined) {
@@ -47,10 +49,7 @@ class Contract {
             }
         });
 
-        if (fields.length === 0) {
-            return null;
-        }
-
+        fields.push(`updated_at = NOW()`);
         values.push(id);
 
         const query = `
@@ -70,7 +69,7 @@ class Contract {
              SET status = $1
              WHERE id = $2
              RETURNING *`,
-            [status, id]
+            [status, id], updated_at = NOW()
         );
         return result.rows[0];
     }
@@ -138,6 +137,17 @@ class Contract {
             [post_id]
         );
         return result.rows;
+    }
+
+    static async findByPostAndTenant(post_id, tenant_id) {
+        const result = await db.query(
+            `SELECT * FROM public.contracts 
+             WHERE post_id = $1 AND tenant_id = $2
+             ORDER BY created_at DESC
+             LIMIT 1`,
+            [post_id, tenant_id]
+        );
+        return result.rows[0];
     }
 
     static async findAll(filters = {}) {

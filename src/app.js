@@ -23,6 +23,9 @@ app.use('/api/profile', profileRouter);
 const rentalPostRouter = require('./routes/rentalPost');
 app.use('/api/rental-posts', rentalPostRouter);
 
+const contractRouter = require('./routes/contract');
+app.use('/api/contracts', contractRouter);
+
 const locationRouter = require('./routes/location');
 app.use('/api/locations', locationRouter);
 

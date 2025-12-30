@@ -137,12 +137,12 @@ class RentalPost {
 
         // Role-based access control
         if (user?.role === 'landlord') {
-            whereClauses.push(`(rp.status = 'approved' OR rp.landlord_id = $${paramCount})`);
+            whereClauses.push(`(rp.status = 'approved' AND rp.is_available = true) OR rp.landlord_id = $${paramCount}`);
             values.push(user.id);
             paramCount++;
         } else if (user?.role !== 'admin') {
-            // Tenant, guest, or any other role only sees approved
-            whereClauses.push(`rp.status = 'approved'`);
+            // Tenant, guest, or any other role only sees approved AND available
+            whereClauses.push(`rp.status = 'approved' AND rp.is_available = true`);
         }
 
         // Admin can see all, so no clause is added, but can still use the filter below.

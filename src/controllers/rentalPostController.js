@@ -12,7 +12,8 @@ class RentalPostController {
 
             const {
                 title, description, price, area, max_tenants,
-                address_detail, province_code, ward_code, amenities, images
+                address_detail, province_code, ward_code, amenities, images,
+                electricity_price, water_price
             } = req.body;
 
             // Validation
@@ -33,7 +34,9 @@ class RentalPostController {
                 province_code,
                 ward_code,
                 amenities: amenities || [],
-                images: images || []
+                images: images || [],
+                electricity_price,
+                water_price
             };
 
             const newPost = await RentalPost.create(postData);

@@ -79,7 +79,7 @@ class AuthController {
 
     // POST /landlord/register
     async registerLandlord(req, res) {
-        const { email, password, full_name, phone_number, identity_card, address_detail } = req.body;
+        const { email, password, full_name, phone_number, identity_card, address_detail, gender, dob, bio } = req.body;
 
         if (!email || !password || !full_name) {
             return res.status(400).json({ message: 'Email, password và họ tên là bắt buộc.' });

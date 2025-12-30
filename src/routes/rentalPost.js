@@ -8,9 +8,9 @@ const router = express.Router();
 // Tất cả routes đều yêu cầu đăng nhập
 router.use(isAuthenticated);
 
-// GET routes
-router.get('/', (req, res) => rentalPostController.getAllPosts(req, res));
+// GET routes - specific routes first
 router.get('/my/posts', (req, res) => rentalPostController.getMyPosts(req, res));
+router.get('/', (req, res) => rentalPostController.getAllPosts(req, res));
 router.get('/:id', (req, res) => rentalPostController.getPostById(req, res));
 
 // POST routes
