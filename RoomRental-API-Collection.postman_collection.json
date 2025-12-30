@@ -1,0 +1,587 @@
+{
+  "info": {
+    "name": "RoomRental API - Complete Collection",
+    "description": "Complete testing collection for RoomRental Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "tenant_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "landlord_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "post_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "contract_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "landlord_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. AUTHENTICATION",
+      "item": [
+        {
+          "name": "Register Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tenant1@example.com\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"Nguyen Van A\",\n  \"phone_number\": \"0901234567\",\n  \"target_province_code\": \"01\",\n  \"target_ward_code\": \"00001\",\n  \"budget_min\": 3000000,\n  \"budget_max\": 8000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register-tenant",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register-tenant"]
+            }
+          }
+        },
+        {
+          "name": "Register Landlord",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"landlord1@example.com\",\n  \"password\": \"Password123!\",\n  \"full_name\": \"Tran Van B\",\n  \"phone_number\": \"0901234568\",\n  \"identity_card\": \"123456789\",\n  \"address_detail\": \"123 Nguyen Hue, District 1\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register-landlord",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register-landlord"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('tenant_token', jsonData.token);",
+                  "  pm.environment.set('tenant_id', jsonData.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tenant1@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Landlord",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('landlord_token', jsonData.token);",
+                  "  pm.environment.set('landlord_id', jsonData.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"landlord1@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. PROFILE",
+      "item": [
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profile/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update Tenant Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"0909876543\",\n  \"target_province_code\": \"02\",\n  \"target_ward_code\": \"00002\",\n  \"budget_min\": 2500000,\n  \"budget_max\": 7000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile/update-tenant",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile", "update-tenant"]
+            }
+          }
+        },
+        {
+          "name": "Update Landlord Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{landlord_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"0909876544\",\n  \"identity_card\": \"987654321\",\n  \"address_detail\": \"456 Tran Hung Dao, District 5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/profile/update-landlord",
+              "host": ["{{base_url}}"],
+              "path": ["api", "profile", "update-landlord"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. RENTAL POSTS",
+      "item": [
+        {
+          "name": "Create Rental Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('post_id', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{landlord_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Beautiful apartment in District 1\",\n  \"description\": \"Modern 2-bedroom apartment with gym and parking\",\n  \"price\": 5000000,\n  \"area\": 80,\n  \"max_tenants\": 2,\n  \"address_detail\": \"123 Nguyen Hue Str, Dist 1\",\n  \"province_code\": \"01\",\n  \"ward_code\": \"00001\",\n  \"amenities\": [\"wifi\", \"gym\", \"parking\", \"air-conditioner\"],\n  \"images\": [\"image_url_1\", \"image_url_2\"],\n  \"electricity_price\": 3500,\n  \"water_price\": 15000,\n  \"is_available\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rental-posts/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rental-posts", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get All Rental Posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rental-posts?status=approved&province_code=01&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rental-posts"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "approved"
+                },
+                {
+                  "key": "province_code",
+                  "value": "01"
+                },
+                {
+                  "key": "min_price",
+                  "value": "3000000",
+                  "disabled": true
+                },
+                {
+                  "key": "max_price",
+                  "value": "8000000",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Rental Post Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rental-posts/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rental-posts", "{{post_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Rental Post",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{landlord_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated apartment title\",\n  \"price\": 5500000,\n  \"electricity_price\": 4000,\n  \"water_price\": 15000,\n  \"is_available\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rental-posts/{{post_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rental-posts", "{{post_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve Rental Post (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rental-posts/{{post_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rental-posts", "{{post_id}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Rental Post (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejection_reason\": \"Images quality is poor\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/rental-posts/{{post_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rental-posts", "{{post_id}}", "reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. CONTRACTS",
+      "item": [
+        {
+          "name": "Create Contract (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('contract_id', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"post_id\": \"{{post_id}}\",\n  \"tenant_id\": \"{{tenant_id}}\",\n  \"landlord_id\": \"{{landlord_id}}\",\n  \"start_date\": \"2025-01-15\",\n  \"end_date\": \"2026-01-15\",\n  \"actual_price\": 5000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/contracts/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contracts", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Contract Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/contracts/{{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contracts", "{{contract_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Contracts by Tenant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/contracts/tenant/{{tenant_id}}?status=active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contracts", "tenant", "{{tenant_id}}"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Contracts by Landlord",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{landlord_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/contracts/landlord/{{landlord_id}}?status=active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contracts", "landlord", "{{landlord_id}}"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Contract Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tenant_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\",\n  \"actual_price\": 5000000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/contracts/{{contract_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contracts", "{{contract_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. LOCATIONS",
+      "item": [
+        {
+          "name": "Get All Provinces",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/locations/provinces",
+              "host": ["{{base_url}}"],
+              "path": ["api", "locations", "provinces"]
+            }
+          }
+        },
+        {
+          "name": "Get Wards by Province",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/locations/wards?province_id=01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "locations", "wards"],
+              "query": [
+                {
+                  "key": "province_id",
+                  "value": "01"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

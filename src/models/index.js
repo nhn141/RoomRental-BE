@@ -6,6 +6,7 @@ const Landlord = require('./Landlord');
 const RentalPost = require('./RentalPost');
 const Province = require('./Province');
 const Ward = require('./Ward');
+const Contract = require('./Contract');
 
 module.exports = {
     User,
@@ -14,5 +15,6 @@ module.exports = {
     Landlord,
     RentalPost,
     Province,
-    Ward
+    Ward,
+    Contract
 };

@@ -13,12 +13,12 @@ class Landlord {
     }
 
     static async create(landlordData) {
-        const { user_id, phone_number, identity_card, address_detail } = landlordData;
+        const { user_id, phone_number, identity_card, address_detail, gender, dob, bio } = landlordData;
         const result = await db.query(
-            `INSERT INTO public.landlords (user_id, phone_number, identity_card, address_detail)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO public.landlords (user_id, phone_number, identity_card, address_detail, gender, dob, bio)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,
-            [user_id, phone_number || null, identity_card || null, address_detail || null]
+            [user_id, phone_number || null, identity_card || null, address_detail || null, gender || null, dob || null, bio || null]
         );
         return result.rows[0];
     }
@@ -28,7 +28,7 @@ class Landlord {
         const values = [];
         let paramCount = 1;
 
-        const allowedFields = ['phone_number', 'identity_card', 'address_detail', 'reputation_score'];
+        const allowedFields = ['phone_number', 'identity_card', 'address_detail', 'reputation_score', 'gender', 'dob', 'bio'];
 
         allowedFields.forEach(field => {
             if (updates[field] !== undefined) {

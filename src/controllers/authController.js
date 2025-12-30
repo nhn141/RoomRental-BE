@@ -18,7 +18,7 @@ class AuthController {
 
     // POST /tenant/register
     async registerTenant(req, res) {
-        const { email, password, full_name, phone_number, looking_for_area } = req.body;
+        const { email, password, full_name, phone_number, target_province_code, target_ward_code, budget_min, budget_max, gender, dob, bio } = req.body;
 
         if (!email || !password || !full_name) {
             return res.status(400).json({ message: 'Email, password và họ tên là bắt buộc.' });
@@ -51,7 +51,13 @@ class AuthController {
             await Tenant.create({
                 user_id: newUser.id,
                 phone_number,
-                looking_for_area
+                target_province_code,
+                target_ward_code,
+                budget_min,
+                budget_max,
+                gender,
+                dob,
+                bio
             });
 
             await client.query('COMMIT');
@@ -107,7 +113,10 @@ class AuthController {
                 user_id: newUser.id,
                 phone_number,
                 identity_card,
-                address_detail
+                address_detail,
+                gender,
+                dob,
+                bio
             });
 
             await client.query('COMMIT');

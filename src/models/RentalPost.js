@@ -25,20 +25,23 @@ class RentalPost {
     static async create(postData) {
         const {
             landlord_id, title, description, price, area, max_tenants,
-            address_detail, province_code, ward_code, amenities, images
+            address_detail, province_code, ward_code, amenities, images, 
+            electricity_price, water_price
         } = postData;
 
         const result = await db.query(
             `INSERT INTO public.rental_posts 
              (landlord_id, title, description, price, area, max_tenants, 
-              address_detail, province_code, ward_code, amenities, images, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
+              address_detail, province_code, ward_code, amenities, images, status, electricity_price, water_price)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', $12, $13)
              RETURNING *`,
             [
                 landlord_id, title, description || null, price, area, max_tenants || null,
                 address_detail, province_code, ward_code,
                 amenities ? JSON.stringify(amenities) : '[]',
-                images || []
+                images || [],
+                electricity_price || null,
+                water_price || null
             ]
         );
         return result.rows[0];
@@ -51,7 +54,8 @@ class RentalPost {
 
         const allowedFields = [
             'title', 'description', 'price', 'area', 'max_tenants',
-            'address_detail', 'province_code', 'ward_code', 'amenities', 'images'
+            'address_detail', 'province_code', 'ward_code', 'amenities', 'images',
+            'electricity_price', 'water_price', 'is_available'
         ];
 
         allowedFields.forEach(field => {

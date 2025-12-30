@@ -32,10 +32,18 @@ class ProfileController {
                     profile.phone_number = adminInfo.phone_number;
                 }
             } else if (role === 'tenant') {
-                const tenantInfo = await Tenant.findByUserId(userId);
+                const tenantInfo = await Tenant.findByUserIdWithNames(userId);
                 if (tenantInfo) {
                     profile.phone_number = tenantInfo.phone_number;
-                    profile.looking_for_area = tenantInfo.looking_for_area;
+                    profile.target_province_code = tenantInfo.target_province_code;
+                    profile.target_province_name = tenantInfo.target_province_name;
+                    profile.target_ward_code = tenantInfo.target_ward_code;
+                    profile.target_ward_name = tenantInfo.target_ward_name;
+                    profile.budget_min = tenantInfo.budget_min;
+                    profile.budget_max = tenantInfo.budget_max;
+                    profile.gender = tenantInfo.gender;
+                    profile.dob = tenantInfo.dob;
+                    profile.bio = tenantInfo.bio;
                 }
             } else if (role === 'landlord') {
                 const landlordInfo = await Landlord.findByUserId(userId);
@@ -44,6 +52,9 @@ class ProfileController {
                     profile.identity_card = landlordInfo.identity_card;
                     profile.address_detail = landlordInfo.address_detail;
                     profile.reputation_score = landlordInfo.reputation_score;
+                    profile.gender = landlordInfo.gender;
+                    profile.dob = landlordInfo.dob;
+                    profile.bio = landlordInfo.bio;
                 }
             }
 
@@ -62,7 +73,7 @@ class ProfileController {
         try {
             const userId = req.user.id;
             const role = req.user.role;
-            const { full_name, phone_number, department, looking_for_area, identity_card, address_detail } = req.body;
+            const { full_name, phone_number, department, identity_card, address_detail, gender, dob, bio, target_province_code, target_ward_code, budget_min, budget_max } = req.body;
 
             // Cập nhật thông tin trong bảng users (chỉ full_name)
             if (full_name !== undefined) {
@@ -81,7 +92,13 @@ class ProfileController {
             } else if (role === 'tenant') {
                 const tenantUpdates = {};
                 if (phone_number !== undefined) tenantUpdates.phone_number = phone_number;
-                if (looking_for_area !== undefined) tenantUpdates.looking_for_area = looking_for_area;
+                if (target_province_code !== undefined) tenantUpdates.target_province_code = target_province_code;
+                if (target_ward_code !== undefined) tenantUpdates.target_ward_code = target_ward_code;
+                if (budget_min !== undefined) tenantUpdates.budget_min = budget_min;
+                if (budget_max !== undefined) tenantUpdates.budget_max = budget_max;
+                if (gender !== undefined) tenantUpdates.gender = gender;
+                if (dob !== undefined) tenantUpdates.dob = dob;
+                if (bio !== undefined) tenantUpdates.bio = bio;
 
                 if (Object.keys(tenantUpdates).length > 0) {
                     await Tenant.update(userId, tenantUpdates);
@@ -91,6 +108,9 @@ class ProfileController {
                 if (phone_number !== undefined) landlordUpdates.phone_number = phone_number;
                 if (identity_card !== undefined) landlordUpdates.identity_card = identity_card;
                 if (address_detail !== undefined) landlordUpdates.address_detail = address_detail;
+                if (gender !== undefined) landlordUpdates.gender = gender;
+                if (dob !== undefined) landlordUpdates.dob = dob;
+                if (bio !== undefined) landlordUpdates.bio = bio;
 
                 if (Object.keys(landlordUpdates).length > 0) {
                     await Landlord.update(userId, landlordUpdates);
@@ -115,10 +135,18 @@ class ProfileController {
                     profile.phone_number = adminInfo.phone_number;
                 }
             } else if (role === 'tenant') {
-                const tenantInfo = await Tenant.findByUserId(userId);
+                const tenantInfo = await Tenant.findByUserIdWithNames(userId);
                 if (tenantInfo) {
                     profile.phone_number = tenantInfo.phone_number;
-                    profile.looking_for_area = tenantInfo.looking_for_area;
+                    profile.target_province_code = tenantInfo.target_province_code;
+                    profile.target_province_name = tenantInfo.target_province_name;
+                    profile.target_ward_code = tenantInfo.target_ward_code;
+                    profile.target_ward_name = tenantInfo.target_ward_name;
+                    profile.budget_min = tenantInfo.budget_min;
+                    profile.budget_max = tenantInfo.budget_max;
+                    profile.gender = tenantInfo.gender;
+                    profile.dob = tenantInfo.dob;
+                    profile.bio = tenantInfo.bio;
                 }
             } else if (role === 'landlord') {
                 const landlordInfo = await Landlord.findByUserId(userId);
@@ -127,6 +155,9 @@ class ProfileController {
                     profile.identity_card = landlordInfo.identity_card;
                     profile.address_detail = landlordInfo.address_detail;
                     profile.reputation_score = landlordInfo.reputation_score;
+                    profile.gender = landlordInfo.gender;
+                    profile.dob = landlordInfo.dob;
+                    profile.bio = landlordInfo.bio;
                 }
             }
 
