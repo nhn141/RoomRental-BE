@@ -24,6 +24,11 @@ class AuthController {
             return res.status(400).json({ message: 'Email, password và họ tên là bắt buộc.' });
         }
 
+        // Validate password length
+        if (password.length < 6) {
+            return res.status(400).json({ message: 'Password phải có ít nhất 6 ký tự' });
+        }
+
         const client = await db.pool.connect();
         try {
             await client.query('BEGIN');
@@ -83,6 +88,11 @@ class AuthController {
 
         if (!email || !password || !full_name) {
             return res.status(400).json({ message: 'Email, password và họ tên là bắt buộc.' });
+        }
+
+        // Validate password length
+        if (password.length < 6) {
+            return res.status(400).json({ message: 'Password phải có ít nhất 6 ký tự' });
         }
 
         const client = await db.pool.connect();

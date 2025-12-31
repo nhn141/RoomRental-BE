@@ -271,6 +271,48 @@ class RentalPost {
         const result = await db.query(query, values);
         return result.rows;
     }
+
+    static async getRecommendedPostsForTenant(tenant_id) {
+        // Lấy thông tin tenant
+        const tenantResult = await db.query(
+            `SELECT target_province_code, target_ward_code, budget_min, budget_max
+             FROM public.tenants
+             WHERE user_id = $1`,
+            [tenant_id]
+        );
+
+        if (tenantResult.rows.length === 0) {
+            return [];
+        }
+
+        const tenant = tenantResult.rows[0];
+        const { target_province_code, target_ward_code, budget_min, budget_max } = tenant;
+
+        // Lấy tất cả bài đăng đã approved, join thông tin landlord và địa chỉ
+        const postsResult = await db.query(
+            `SELECT rp.*, 
+                    u.full_name as landlord_name, u.email as landlord_email,
+                    l.phone_number as landlord_phone, l.reputation_score,
+                    p.full_name as province_name,
+                    w.name_with_type as ward_name,
+                    CASE
+                        WHEN rp.ward_code = $1 AND rp.price >= $2 AND rp.price <= $3 THEN 1
+                        WHEN rp.ward_code = $1 AND (rp.price < $2 OR rp.price > $3) THEN 2
+                        WHEN rp.province_code = $4 AND rp.price >= $2 AND rp.price <= $3 THEN 3
+                        ELSE 4
+                    END as priority_rank
+             FROM public.rental_posts rp
+             JOIN public.landlords l ON rp.landlord_id = l.user_id
+             JOIN public.users u ON l.user_id = u.id
+             LEFT JOIN public.provinces p ON rp.province_code = p.id
+             LEFT JOIN public.wards w ON rp.ward_code = w.id
+             WHERE rp.status = 'approved' AND rp.is_available = true
+             ORDER BY priority_rank ASC, rp.created_at DESC`,
+            [target_ward_code, budget_min, budget_max, target_province_code]
+        );
+
+        return postsResult.rows;
+    }
 }
 
 module.exports = RentalPost;

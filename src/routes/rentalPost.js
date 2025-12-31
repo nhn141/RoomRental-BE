@@ -2,6 +2,7 @@
 const express = require('express');
 const { isAuthenticated } = require('../middleware/auth.js');
 const rentalPostController = require('../controllers/rentalPostController');
+const recommendationController = require('../controllers/recommendationController');
 
 const router = express.Router();
 
@@ -9,6 +10,7 @@ const router = express.Router();
 router.use(isAuthenticated);
 
 // GET routes - specific routes first
+router.get('/recommendations/my', (req, res) => recommendationController.getRecommendedPosts(req, res));
 router.get('/my/posts', (req, res) => rentalPostController.getMyPosts(req, res));
 router.get('/', (req, res) => rentalPostController.getAllPosts(req, res));
 router.get('/:id', (req, res) => rentalPostController.getPostById(req, res));

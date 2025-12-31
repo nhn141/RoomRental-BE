@@ -29,9 +29,14 @@ class TestHelper {
         // Tạo record tương ứng theo role
         if (role === 'tenant') {
             await db.query(
-                `INSERT INTO public.tenants (user_id, phone_number, looking_for_area)
-                 VALUES ($1, $2, $3)`,
-                [user.id, userData.phone_number || null, userData.looking_for_area || null]
+                `INSERT INTO public.tenants (user_id, phone_number, budget_min, budget_max)
+                 VALUES ($1, $2, $3, $4)`,
+                [
+                    user.id, 
+                    userData.phone_number || null,
+                    userData.budget_min || 0,
+                    userData.budget_max || 0
+                ]
             );
         } else if (role === 'landlord') {
             await db.query(
@@ -72,7 +77,8 @@ class TestHelper {
             full_name: 'Test Tenant',
             role: 'tenant',
             phone_number: '0123456789',
-            looking_for_area: 'Hanoi'
+            budget_min: 3000000,
+            budget_max: 8000000
         });
 
         // 2. Landlord (để test cross-role)
@@ -110,8 +116,11 @@ class TestHelper {
 
     // Đóng database connection
     async closeConnection() {
-        await db.pool.end();
+        if (!db.pool.ended) {
+            await db.pool.end();
+        }
     }
 }
 
-module.exports = new TestHelper();
+// Export class để có thể new TestHelper()
+module.exports = TestHelper;

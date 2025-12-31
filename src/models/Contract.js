@@ -66,10 +66,10 @@ class Contract {
     static async updateStatus(id, status) {
         const result = await db.query(
             `UPDATE public.contracts 
-             SET status = $1
+             SET status = $1, updated_at = NOW()
              WHERE id = $2
              RETURNING *`,
-            [status, id], updated_at = NOW()
+            [status, id]
         );
         return result.rows[0];
     }

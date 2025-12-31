@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/routes/profile.js</title>
+    <title>Code coverage report for src/routes/location.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/routes</a> profile.js</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/routes</a> location.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
@@ -79,30 +79,30 @@
 <a name='L14'></a><a href='#L14'>14</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span></td><td class="text"><pre class="prettyprint lang-js">// routes/profile.js
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// routes/location.js
 const express = require('express');
-const { isAuthenticated } = require('../middleware/auth.js');
-const profileController = require('../controllers/profileController');
+const locationController = require('../controllers/locationController');
 &nbsp;
 const router = express.Router();
 &nbsp;
-// GET /profile - Xem profile của user hiện tại (tất cả roles)
-router.get('/', isAuthenticated, profileController.getProfile);
+// Public endpoints - không cần auth
+router.get('/provinces', locationController.getProvinces);
+router.get('/wards', locationController.getWards);
+router.get('/search-province', locationController.searchProvinces);
+router.get('/search-ward', locationController.searchWards);
 &nbsp;
-// PUT /edit-profile - Cập nhật profile của user hiện tại
-router.put('/edit-profile', isAuthenticated, profileController.updateProfile);
-&nbsp;
-module.exports = router;</pre></td></tr></table></pre>
+module.exports = router;
+&nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->

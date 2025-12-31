@@ -1,19 +1,23 @@
 // __tests__/auth.test.js
 const request = require('supertest');
 const app = require('../src/app');
-const testHelper = require('./setup/testHelper');
+const TestHelper = require('./setup/testHelper');
+const db = require('../src/db/db');
+
+const testHelper = new TestHelper();
+
+// Setup global: Tạo dữ liệu test 1 lần duy nhất cho toàn bộ file
+beforeAll(async () => {
+    await testHelper.seedAuthTestUsers();
+}, 30000);
+
+// Cleanup global: Xóa dữ liệu và đóng connection sau khi tất cả tests xong
+afterAll(async () => {
+    await testHelper.cleanupTestUsers();
+    await testHelper.closeConnection();
+}, 30000);
 
 describe('Tenant Authentication', () => {
-    // Setup: Tạo dữ liệu test trước khi chạy tests
-    beforeAll(async () => {
-        await testHelper.seedAuthTestUsers();
-    });
-
-    // Cleanup: Xóa dữ liệu test và đóng connection sau khi test xong
-    afterAll(async () => {
-        await testHelper.cleanupTestUsers();
-        await testHelper.closeConnection();
-    });
 
     describe('POST /api/auth/tenant/login', () => {
         test('TC01: Login thành công với thông tin hợp lệ', async () => {
@@ -176,6 +180,218 @@ describe('Tenant Authentication', () => {
             const responseTime = endTime - startTime;
 
             expect(responseTime).toBeLessThan(2000);
+        });
+    });
+
+    describe('POST /api/auth/tenant/register', () => {
+        test('TC11: Đăng ký thành công với thông tin hợp lệ', async () => {
+            const registerData = {
+                email: 'newtenant@test.com',
+                password: 'Test@123456',
+                full_name: 'New Tenant User'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/tenant/register')
+                .send(registerData)
+                .expect('Content-Type', /json/)
+                .expect(201);
+
+            expect(response.body).toHaveProperty('message', 'Đăng ký tenant thành công');
+            expect(response.body).toHaveProperty('token');
+            expect(response.body.user).toHaveProperty('email', registerData.email);
+            expect(response.body.user).toHaveProperty('role', 'tenant');
+
+            // Cleanup: Xóa user vừa tạo
+            await db.query('DELETE FROM public.users WHERE email = $1', [registerData.email]);
+        });
+
+        test('TC12: Đăng ký thất bại - thiếu email', async () => {
+            const registerData = {
+                password: 'Test@123456',
+                full_name: 'Test User'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/tenant/register')
+                .send(registerData)
+                .expect('Content-Type', /json/)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('message');
+        });
+
+        test('TC13: Đăng ký thất bại - thiếu password', async () => {
+            const registerData = {
+                email: 'test@test.com',
+                full_name: 'Test User'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/tenant/register')
+                .send(registerData)
+                .expect('Content-Type', /json/)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('message');
+        });
+
+        test('TC14: Đăng ký thất bại - email đã tồn tại', async () => {
+            const registerData = {
+                email: 'tenant@test.com',
+                password: 'Test@123456',
+                full_name: 'Duplicate User'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/tenant/register')
+                .send(registerData)
+                .expect('Content-Type', /json/)
+                .expect(409);
+
+            expect(response.body).toHaveProperty('message', 'Email đã tồn tại');
+        });
+
+        test('TC15: Đăng ký thất bại - password quá ngắn', async () => {
+            const registerData = {
+                email: 'short@test.com',
+                password: '123',
+                full_name: 'Test User'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/tenant/register')
+                .send(registerData)
+                .expect('Content-Type', /json/)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('message', 'Password phải có ít nhất 6 ký tự');
+        });
+    });
+});
+
+describe('Landlord Authentication', () => {
+    describe('POST /api/auth/landlord/login', () => {
+        test('TC16: Login thành công với thông tin hợp lệ', async () => {
+            const loginData = {
+                email: 'landlord@test.com',
+                password: 'Test@123456'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/landlord/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(200);
+
+            expect(response.body).toHaveProperty('message', 'Đăng nhập thành công');
+            expect(response.body).toHaveProperty('token');
+            expect(response.body.user).toHaveProperty('role', 'landlord');
+        });
+
+        test('TC17: Login thất bại - sử dụng tài khoản tenant', async () => {
+            const loginData = {
+                email: 'tenant@test.com',
+                password: 'Test@123456'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/landlord/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(403);
+
+            expect(response.body).toHaveProperty('message', 'Tài khoản này không có quyền truy cập landlord.');
+        });
+    });
+
+    describe('POST /api/auth/landlord/register', () => {
+        test('TC18: Đăng ký landlord thành công', async () => {
+            const registerData = {
+                email: 'newlandlord@test.com',
+                password: 'Test@123456',
+                full_name: 'New Landlord User'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/landlord/register')
+                .send(registerData)
+                .expect('Content-Type', /json/)
+                .expect(201);
+
+            expect(response.body).toHaveProperty('message', 'Đăng ký landlord thành công');
+            expect(response.body).toHaveProperty('token');
+            expect(response.body.user).toHaveProperty('role', 'landlord');
+
+            // Cleanup: Xóa user vừa tạo
+            await db.query('DELETE FROM public.users WHERE email = $1', [registerData.email]);
+        });
+
+        test('TC19: Đăng ký thất bại - email đã tồn tại', async () => {
+            const registerData = {
+                email: 'landlord@test.com',
+                password: 'Test@123456',
+                full_name: 'Duplicate Landlord'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/landlord/register')
+                .send(registerData)
+                .expect('Content-Type', /json/)
+                .expect(409);
+
+            expect(response.body).toHaveProperty('message', 'Email đã tồn tại');
+        });
+    });
+});
+
+describe('Admin Authentication', () => {
+    describe('POST /api/auth/admin/login', () => {
+        test('TC20: Admin login thành công', async () => {
+            const loginData = {
+                email: 'admin@test.com',
+                password: 'Test@123456'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/admin/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(200);
+
+            expect(response.body).toHaveProperty('message', 'Đăng nhập thành công');
+            expect(response.body).toHaveProperty('token');
+            expect(response.body.user).toHaveProperty('role', 'admin');
+        });
+
+        test('TC21: Admin login thất bại - sử dụng tài khoản tenant', async () => {
+            const loginData = {
+                email: 'tenant@test.com',
+                password: 'Test@123456'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/admin/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(403);
+
+            expect(response.body).toHaveProperty('message', 'Tài khoản này không có quyền truy cập admin.');
+        });
+
+        test('TC22: Admin login thất bại - password sai', async () => {
+            const loginData = {
+                email: 'admin@test.com',
+                password: 'WrongPassword'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/admin/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(401);
+
+            expect(response.body).toHaveProperty('message', 'Email hoặc mật khẩu không đúng');
         });
     });
 });
