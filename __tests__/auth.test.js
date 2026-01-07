@@ -393,5 +393,63 @@ describe('Admin Authentication', () => {
 
             expect(response.body).toHaveProperty('message', 'Email hoặc mật khẩu không đúng');
         });
+
+        test('TC23: Admin login thất bại - sử dụng tài khoản landlord', async () => {
+            const loginData = {
+                email: 'landlord@test.com',
+                password: 'Test@123456'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/admin/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(403);
+
+            expect(response.body).toHaveProperty('message', 'Tài khoản này không có quyền truy cập admin.');
+        });
+
+        test('TC24: Admin login thất bại - email không tồn tại', async () => {
+            const loginData = {
+                email: 'nonadmin@test.com',
+                password: 'Test@123456'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/admin/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(401);
+
+            expect(response.body).toHaveProperty('message', 'Email hoặc mật khẩu không đúng');
+        });
+
+        test('TC25: Admin login thất bại - thiếu email', async () => {
+            const loginData = {
+                password: 'Test@123456'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/admin/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('message', 'Email và password là bắt buộc');
+        });
+
+        test('TC26: Admin login thất bại - thiếu password', async () => {
+            const loginData = {
+                email: 'admin@test.com'
+            };
+
+            const response = await request(app)
+                .post('/api/auth/admin/login')
+                .send(loginData)
+                .expect('Content-Type', /json/)
+                .expect(400);
+
+            expect(response.body).toHaveProperty('message', 'Email và password là bắt buộc');
+        });
     });
 });

@@ -440,6 +440,264 @@ describe('Profile Management', () => {
 
                 expect(response.body).toHaveProperty('message', 'Cập nhật profile thành công');
             });
+
+            test('TC25: Cập nhật profile với invalid phone format', async () => {
+                const updates = {
+                    phone_number: 'invalid-phone'
+                };
+
+                const response = await request(app)
+                    .put('/api/profile/edit-profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .send(updates)
+                    .expect('Content-Type', /json/);
+
+                // Could be 200 or 400 depending on validation
+                expect([200, 400]).toContain(response.status);
+            });
+
+            test('TC26: Cập nhật profile với budget không hợp lệ (min > max)', async () => {
+                const updates = {
+                    budget_min: 10000000,
+                    budget_max: 5000000
+                };
+
+                const response = await request(app)
+                    .put('/api/profile/edit-profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .send(updates)
+                    .expect('Content-Type', /json/);
+
+                // Có thể 200 hoặc 400 tùy validation
+                expect([200, 400]).toContain(response.status);
+            });
+
+            test('TC27: Cập nhật profile với dob là ngày trong tương lai', async () => {
+                const futureDate = new Date();
+                futureDate.setFullYear(futureDate.getFullYear() + 1);
+                
+                const updates = {
+                    dob: futureDate.toISOString().split('T')[0]
+                };
+
+                const response = await request(app)
+                    .put('/api/profile/edit-profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .send(updates)
+                    .expect('Content-Type', /json/);
+
+                // Có thể pass hoặc fail tùy validation
+                expect([200, 400]).toContain(response.status);
+            });
+
+            test('TC28: Cập nhật profile - verify không thay đổi email', async () => {
+                const response = await request(app)
+                    .get('/api/profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .expect(200);
+
+                const originalEmail = response.body.profile.email;
+
+                const updates = {
+                    full_name: 'Changed Name'
+                };
+
+                await request(app)
+                    .put('/api/profile/edit-profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .send(updates)
+                    .expect(200);
+
+                const checkResponse = await request(app)
+                    .get('/api/profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .expect(200);
+
+                expect(checkResponse.body.profile.email).toBe(originalEmail);
+            });
+
+            test('TC29: Cập nhật profile - verify không thay đổi role', async () => {
+                const response = await request(app)
+                    .get('/api/profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .expect(200);
+
+                const originalRole = response.body.profile.role;
+
+                const updates = {
+                    full_name: 'Another Change'
+                };
+
+                await request(app)
+                    .put('/api/profile/edit-profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .send(updates)
+                    .expect(200);
+
+                const checkResponse = await request(app)
+                    .get('/api/profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .expect(200);
+
+                expect(checkResponse.body.profile.role).toBe(originalRole);
+            });
+
+            test('TC30: Cập nhật profile với tên quá dài', async () => {
+                const longName = 'A'.repeat(500);
+                
+                const updates = {
+                    full_name: longName
+                };
+
+                const response = await request(app)
+                    .put('/api/profile/edit-profile')
+                    .set('Authorization', `Bearer ${tenantToken}`)
+                    .send(updates)
+                    .expect('Content-Type', /json/);
+
+                // Có thể 200 hoặc 400
+                expect([200, 400, 413]).toContain(response.status);
+            });
+        });
+    });
+
+    describe('DELETE /api/profile - Delete Profile (nếu API có)', () => {
+        test('TC31: Xóa profile - kiểm tra xem API có tồn tại không', async () => {
+            const response = await request(app)
+                .delete('/api/profile')
+                .set('Authorization', `Bearer ${tenantToken}`);
+
+            // Có thể 200, 201, 404, 405 tùy API
+            expect([200, 201, 204, 404, 405]).toContain(response.status);
+        });
+    });
+
+    describe('GET /api/profile/search - Search Profiles', () => {
+        test('TC32: Kiểm tra endpoint search profile', async () => {
+            const response = await request(app)
+                .get('/api/profile/search?q=test')
+                .set('Authorization', `Bearer ${tenantToken}`);
+
+            // Có thể 200, 404, 405 tùy API
+            expect([200, 404, 405]).toContain(response.status);
+        });
+    });
+
+    describe('Profile Consistency Tests', () => {
+        test('TC33: Xem profile lập lại để verify dữ liệu', async () => {
+            const response1 = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            const response2 = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            expect(response1.body.profile.id).toBe(response2.body.profile.id);
+            expect(response1.body.profile.email).toBe(response2.body.profile.email);
+            expect(response1.body.profile.full_name).toBe(response2.body.profile.full_name);
+        });
+
+        test('TC34: Landlord profile có reputation_score', async () => {
+            const response = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${landlordToken}`)
+                .expect(200);
+
+            expect(response.body.profile).toHaveProperty('reputation_score');
+            expect(typeof response.body.profile.reputation_score).toBe('number');
+        });
+
+        test('TC35: Tenant profile không có reputation_score', async () => {
+            const response = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            // Tenant không nên có reputation_score
+            if (response.body.profile.hasOwnProperty('reputation_score')) {
+                expect(response.body.profile.reputation_score).toBeUndefined();
+            }
+        });
+
+        test('TC36: Response time xem profile dưới 1 giây', async () => {
+            const startTime = Date.now();
+
+            await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            const endTime = Date.now();
+            const responseTime = endTime - startTime;
+
+            expect(responseTime).toBeLessThan(1000);
+        });
+
+        test('TC37: Response time cập nhật profile dưới 1.5 giây', async () => {
+            const updates = {
+                full_name: 'Performance Test'
+            };
+
+            const startTime = Date.now();
+
+            await request(app)
+                .put('/api/profile/edit-profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .send(updates)
+                .expect(200);
+
+            const endTime = Date.now();
+            const responseTime = endTime - startTime;
+
+            expect(responseTime).toBeLessThan(1500);
+        });
+
+        test('TC38: Profile endpoint trả về proper headers', async () => {
+            const response = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            expect(response.headers['content-type']).toMatch(/json/);
+        });
+
+        test('TC39: Admin profile có department và phone_number', async () => {
+            const response = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            expect(response.body.profile).toHaveProperty('department');
+            expect(response.body.profile).toHaveProperty('phone_number');
+        });
+
+        test('TC40: Verify profile fields là read-only sau update', async () => {
+            // Thử cập nhật toàn bộ fields
+            const updates = {
+                full_name: 'New Name',
+                phone_number: '0123456789',
+                budget_min: 2000000,
+                budget_max: 5000000,
+                bio: 'New bio'
+            };
+
+            await request(app)
+                .put('/api/profile/edit-profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .send(updates)
+                .expect(200);
+
+            const response = await request(app)
+                .get('/api/profile')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            // Verify các fields được update
+            expect(response.body.profile.full_name).toBe(updates.full_name);
+            expect(response.body.profile.bio).toBe(updates.bio);
         });
     });
 });

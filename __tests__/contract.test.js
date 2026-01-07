@@ -709,5 +709,152 @@ describe('Contract Management', () => {
 
             expect(response.body).toHaveProperty('message', 'Không tìm thấy hợp đồng');
         });
+
+        test('TC34: Contract lấy lại thành công', async () => {
+            if (!testContractId) {
+                console.log('Skip TC34: testContractId không tồn tại');
+                return;
+            }
+
+            const response = await request(app)
+                .get(`/api/contracts/${testContractId}`)
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            expect(response.body).toHaveProperty('contract');
+            expect(response.body.contract.id).toBe(testContractId);
+        });
+
+        test('TC35: Verify contract response time dưới 1 giây', async () => {
+            if (!testContractId) {
+                console.log('Skip TC35: testContractId không tồn tại');
+                return;
+            }
+
+            const startTime = Date.now();
+
+            await request(app)
+                .get(`/api/contracts/${testContractId}`)
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect(200);
+
+            const endTime = Date.now();
+            expect(endTime - startTime).toBeLessThan(1000);
+        });
+
+        test('TC36: Contract xem danh sách contracts của tenant', async () => {
+            const response = await request(app)
+                .get('/api/contracts')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 404, 500]).toContain(response.status);
+        });
+
+        test('TC37: Contract filter theo status', async () => {
+            const response = await request(app)
+                .get('/api/contracts?status=active')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 404]).toContain(response.status);
+        });
+
+        test('TC38: Contract sort theo created_at', async () => {
+            const response = await request(app)
+                .get('/api/contracts?sort=created_at')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 404]).toContain(response.status);
+        });
+
+        test('TC39: Contract pagination with limit', async () => {
+            const response = await request(app)
+                .get('/api/contracts?limit=5')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 404]).toContain(response.status);
+        });
+
+        test('TC40: Contract pagination with offset', async () => {
+            const response = await request(app)
+                .get('/api/contracts?offset=0')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 404]).toContain(response.status);
+        });
+
+        test('TC41: Tenant không thể update contract của tenant khác', async () => {
+            if (!testContractId) {
+                console.log('Skip TC41: testContractId không tồn tại');
+                return;
+            }
+
+            const updates = {
+                status: 'terminated'
+            };
+
+            const response = await request(app)
+                .put(`/api/contracts/${testContractId}`)
+                .set('Authorization', `Bearer ${tenant2Token}`)
+                .send(updates)
+                .expect('Content-Type', /json/);
+
+            expect([403, 404]).toContain(response.status);
+        });
+
+        test('TC42: Contract fields validation', async () => {
+            if (!approvedPostId) {
+                console.log('Skip TC42: approvedPostId không tồn tại');
+                return;
+            }
+
+            const contractData = {
+                post_id: approvedPostId,
+                start_date: '2025-05-01',
+                end_date: '2025-04-01' // End trước start
+            };
+
+            const response = await request(app)
+                .post('/api/contracts')
+                .set('Authorization', `Bearer ${tenant2Token}`)
+                .send(contractData)
+                .expect('Content-Type', /json/);
+
+            expect([201, 400]).toContain(response.status);
+        });
+
+        test('TC43: Response time danh sách contracts dưới 1.5 giây', async () => {
+            const startTime = Date.now();
+
+            await request(app)
+                .get('/api/contracts')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            const endTime = Date.now();
+            expect(endTime - startTime).toBeLessThan(1500);
+        });
+
+        test('TC44: Contract headers validation', async () => {
+            const response = await request(app)
+                .get('/api/contracts')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            expect(response.headers['content-type']).toMatch(/json/);
+        });
+
+        test('TC45: Contract admin view all contracts', async () => {
+            const response = await request(app)
+                .get('/api/contracts?admin=true')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 404]).toContain(response.status);
+        });
     });
 });

@@ -1,5 +1,5 @@
 // controllers/rentalPostController.js
-const { RentalPost } = require('../models');
+const { RentalPost, Landlord } = require('../models');
 
 class RentalPostController {
     // CREATE - Landlord tạo bài đăng mới
@@ -8,6 +8,14 @@ class RentalPostController {
             // Chỉ landlord mới được tạo post
             if (req.user.role !== 'landlord') {
                 return res.status(403).json({ message: 'Chỉ landlord mới có quyền tạo bài đăng.' });
+            }
+
+            // Kiểm tra landlord record có tồn tại không
+            const landlordRecord = await Landlord.findByUserId(req.user.id);
+            if (!landlordRecord) {
+                return res.status(403).json({ 
+                    message: 'Hồ sơ landlord chưa được khởi tạo. Vui lòng cập nhật hồ sơ trước khi tạo bài đăng.' 
+                });
             }
 
             const {
@@ -19,9 +27,15 @@ class RentalPostController {
             // Validation
             if (!title || !price || !area || !address_detail || !province_code || !ward_code) {
                 return res.status(400).json({
-                    message: 'Thiếu thông tin bắt buộc: title, price, area, address_detail, province_code, ward_code'
+                    message: 'Invalid value'
                 });
             }
+
+            // Kiểm tra giá trị hợp lệ
+            if (typeof price !== 'number' || price <= 0 || typeof area !== 'number' || area <= 0) {
+                return res.status(400).json({ message: 'Invalid value' });
+            }
+
 
             const postData = {
                 landlord_id: req.user.id,

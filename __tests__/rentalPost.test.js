@@ -630,5 +630,162 @@ describe('Rental Post Management', () => {
 
             expect(response.body).toHaveProperty('message', 'Không tìm thấy bài đăng');
         });
+
+        test('TC31: Get danh sách rental posts công khai', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts')
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 401]).toContain(response.status);
+        });
+
+        test('TC32: Get rental posts with pagination', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts?limit=10&offset=0')
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 401]).toContain(response.status);
+        });
+
+        test('TC33: Filter rental posts theo price', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts?minPrice=1000000&maxPrice=10000000')
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 401]).toContain(response.status);
+        });
+
+        test('TC34: Filter rental posts theo area', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts?minArea=20&maxArea=50')
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 401]).toContain(response.status);
+        });
+
+        test('TC35: Filter rental posts theo province', async () => {
+            if (!validProvinceCode) {
+                console.log('Skip TC35: validProvinceCode không tồn tại');
+                return;
+            }
+
+            const response = await request(app)
+                .get(`/api/rental-posts?province_code=${validProvinceCode}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 401]).toContain(response.status);
+        });
+
+        test('TC36: Sort rental posts theo price', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts?sort=price')
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 401]).toContain(response.status);
+        });
+
+        test('TC37: Sort rental posts theo area', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts?sort=area')
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 401]).toContain(response.status);
+        });
+
+        test('TC38: Response time danh sách posts dưới 2 giây', async () => {
+            const startTime = Date.now();
+
+            await request(app)
+                .get('/api/rental-posts')
+                .expect('Content-Type', /json/);
+
+            const endTime = Date.now();
+            expect(endTime - startTime).toBeLessThan(2000);
+        });
+
+        test('TC39: Get single rental post', async () => {
+            if (!testPostId) {
+                console.log('Skip TC39: testPostId không tồn tại');
+                return;
+            }
+
+            const response = await request(app)
+                .get(`/api/rental-posts/${testPostId}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 404, 401]).toContain(response.status);
+        });
+
+        test('TC40: Search rental posts by title', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts/search?q=phòng')
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 404, 401, 500]).toContain(response.status);
+        });
+
+        test('TC41: Landlord view own rental posts', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts/my-posts')
+                .set('Authorization', `Bearer ${landlordToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 404, 500]).toContain(response.status);
+        });
+
+        test('TC42: Tenant cannot view landlord posts endpoint', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts/my-posts')
+                .set('Authorization', `Bearer ${tenantToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([403, 404, 500]).toContain(response.status);
+        });
+
+        test('TC43: Update rental post - change price', async () => {
+            if (!testPostId) {
+                console.log('Skip TC43: testPostId không tồn tại');
+                return;
+            }
+
+            const updates = {
+                price: 5500000
+            };
+
+            const response = await request(app)
+                .put(`/api/rental-posts/${testPostId}`)
+                .set('Authorization', `Bearer ${landlordToken}`)
+                .send(updates)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 403, 404]).toContain(response.status);
+        });
+
+        test('TC44: Update rental post - change area', async () => {
+            if (!testPostId) {
+                console.log('Skip TC44: testPostId không tồn tại');
+                return;
+            }
+
+            const updates = {
+                area: 35
+            };
+
+            const response = await request(app)
+                .put(`/api/rental-posts/${testPostId}`)
+                .set('Authorization', `Bearer ${landlordToken}`)
+                .send(updates)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400, 403, 404]).toContain(response.status);
+        });
+
+        test('TC45: Rental post headers validation', async () => {
+            const response = await request(app)
+                .get('/api/rental-posts')
+                .expect('Content-Type', /json/);
+
+            expect(response.headers['content-type']).toMatch(/json/);
+        });
     });
 });

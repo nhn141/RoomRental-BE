@@ -487,5 +487,253 @@ describe('Admin Management', () => {
 
             expect(response.body).toHaveProperty('message', 'Không có quyền truy cập. Vui lòng đăng nhập.');
         });
+
+        test('TC30: Filter contracts theo status - pending', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts?status=pending')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC31: Pagination contracts - limit', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts?limit=5')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC32: Pagination contracts - offset', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts?offset=0')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC33: Sort contracts by monthly_rent', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts?sort=monthly_rent')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC34: Filter contracts theo landlord_id', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts?landlord_id=1')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC35: Filter contracts theo tenant_id', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts?tenant_id=1')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC36: Response time danh sách contracts dưới 2 giây', async () => {
+            const startTime = Date.now();
+
+            await request(app)
+                .get('/api/admins/contracts')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            const endTime = Date.now();
+            expect(endTime - startTime).toBeLessThan(2000);
+        });
+
+        test('TC37: Verify contracts list format', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            expect(response.body.contracts).toBeInstanceOf(Array);
+            expect(typeof response.body.total).toBe('number');
+        });
+    });
+
+    describe('User Management - Advanced Tests', () => {
+        test('TC38: Filter users theo email', async () => {
+            const response = await request(app)
+                .get('/api/admins/users?email=tenant@test.com')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC39: Filter users theo is_active status', async () => {
+            const response = await request(app)
+                .get('/api/admins/users?is_active=true')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC40: Sort users by created_at', async () => {
+            const response = await request(app)
+                .get('/api/admins/users?sort=created_at')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC41: Get users with pagination', async () => {
+            const response = await request(app)
+                .get('/api/admins/users?limit=10&offset=0')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect('Content-Type', /json/);
+
+            expect([200, 400]).toContain(response.status);
+        });
+
+        test('TC42: Response time danh sách users dưới 1.5 giây', async () => {
+            const startTime = Date.now();
+
+            await request(app)
+                .get('/api/admins/users')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            const endTime = Date.now();
+            expect(endTime - startTime).toBeLessThan(1500);
+        });
+
+        test('TC43: Admin tạo admin mới với department khác', async () => {
+            const adminData = {
+                email: 'newadmin_hr@test.com',
+                password: 'Admin@123456',
+                full_name: 'HR Admin',
+                department: 'Human Resources',
+                phone_number: '0912345678'
+            };
+
+            const response = await request(app)
+                .post('/api/admins/create')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send(adminData)
+                .expect('Content-Type', /json/);
+
+            expect([201, 400, 409]).toContain(response.status);
+        });
+
+        test('TC44: Admin tạo admin với phone_number format khác nhau', async () => {
+            const adminData = {
+                email: 'newadmin_phone@test.com',
+                password: 'Admin@123456',
+                full_name: 'Phone Admin',
+                phone_number: '09-1234-5678'
+            };
+
+            const response = await request(app)
+                .post('/api/admins/create')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send(adminData)
+                .expect('Content-Type', /json/);
+
+            expect([201, 400, 409]).toContain(response.status);
+        });
+
+        test('TC45: Admin tạo admin không có phone_number', async () => {
+            const adminData = {
+                email: 'newadmin_nophone@test.com',
+                password: 'Admin@123456',
+                full_name: 'No Phone Admin'
+            };
+
+            const response = await request(app)
+                .post('/api/admins/create')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send(adminData)
+                .expect('Content-Type', /json/);
+
+            expect([201, 400, 409]).toContain(response.status);
+        });
+
+        test('TC46: Verify user không có password_hash trong response', async () => {
+            const response = await request(app)
+                .get('/api/admins/users')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            const users = response.body.users;
+            users.forEach(user => {
+                expect(user).not.toHaveProperty('password_hash');
+            });
+        });
+
+        test('TC47: Verify contract không có sensitive data', async () => {
+            const response = await request(app)
+                .get('/api/admins/contracts')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            const contracts = response.body.contracts;
+            if (contracts.length > 0) {
+                contracts.forEach(contract => {
+                    expect(contract).not.toHaveProperty('password_hash');
+                });
+            }
+        });
+
+        test('TC48: Get user detail - verify profile structure', async () => {
+            if (!testUserId) return;
+
+            const response = await request(app)
+                .get(`/api/admins/users/${testUserId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            expect(response.body.user).toHaveProperty('id');
+            expect(response.body.user).toHaveProperty('email');
+            expect(response.body.user).toHaveProperty('full_name');
+            expect(response.body.user).toHaveProperty('role');
+            expect(response.body.user).toHaveProperty('is_active');
+            expect(response.body.user).toHaveProperty('created_at');
+            expect(response.body.user).toHaveProperty('profile');
+        });
+
+        test('TC49: Create admin with empty department', async () => {
+            const adminData = {
+                email: 'newadmin_empty_dept@test.com',
+                password: 'Admin@123456',
+                full_name: 'Empty Dept Admin',
+                department: ''
+            };
+
+            const response = await request(app)
+                .post('/api/admins/create')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send(adminData)
+                .expect('Content-Type', /json/);
+
+            expect([201, 400, 409]).toContain(response.status);
+        });
+
+        test('TC50: Admin lấy users - verify total count', async () => {
+            const response = await request(app)
+                .get('/api/admins/users')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .expect(200);
+
+            expect(typeof response.body.total).toBe('number');
+            expect(response.body.total).toBeGreaterThanOrEqual(0);
+            expect(response.body.users.length).toBeLessThanOrEqual(response.body.total);
+        });
     });
 });

@@ -75,6 +75,48 @@ class ProfileController {
             const role = req.user.role;
             const { full_name, phone_number, department, identity_card, address_detail, gender, dob, bio, target_province_code, target_ward_code, budget_min, budget_max } = req.body;
 
+            // Validation for invalid values
+            if (full_name !== undefined) {
+                const name = full_name.toString().trim();
+                if (name === '') {
+                    return res.status(400).json({ message: 'Invalid value' });
+                }
+            }
+            if (phone_number !== undefined) {
+                const phone = phone_number.toString().trim();
+                if (!/^\d{10,11}$/.test(phone)) {
+                    return res.status(400).json({ message: 'Invalid value' });
+                }
+            }
+            if (budget_min !== undefined) {
+                const min = parseFloat(budget_min);
+                if (isNaN(min) || min <= 0) {
+                    return res.status(400).json({ message: 'Invalid value' });
+                }
+            }
+            if (budget_max !== undefined) {
+                const max = parseFloat(budget_max);
+                if (isNaN(max) || max <= 0) {
+                    return res.status(400).json({ message: 'Invalid value' });
+                }
+            }
+            if (budget_min !== undefined && budget_max !== undefined) {
+                const min = parseFloat(budget_min);
+                const max = parseFloat(budget_max);
+                if (min >= max) {
+                    return res.status(400).json({ message: 'Invalid value' });
+                }
+            }
+            if (gender !== undefined && !['male', 'female', 'Male', 'Female'].includes(gender)) {
+                return res.status(400).json({ message: 'Invalid value' });
+            }
+            if (dob !== undefined) {
+                const date = new Date(dob);
+                if (isNaN(date.getTime())) {
+                    return res.status(400).json({ message: 'Invalid value' });
+                }
+            }
+
             // Cập nhật thông tin trong bảng users (chỉ full_name)
             if (full_name !== undefined) {
                 await User.update(userId, { full_name });
