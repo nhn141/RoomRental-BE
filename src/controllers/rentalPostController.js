@@ -1,16 +1,12 @@
-// controllers/rentalPostController.js
 const { RentalPost, Landlord } = require('../models');
 
 class RentalPostController {
-    // CREATE - Landlord tạo bài đăng mới
     async createPost(req, res) {
         try {
-            // Chỉ landlord mới được tạo post
             if (req.user.role !== 'landlord') {
                 return res.status(403).json({ message: 'Chỉ landlord mới có quyền tạo bài đăng.' });
             }
 
-            // Kiểm tra landlord record có tồn tại không
             const landlordRecord = await Landlord.findByUserId(req.user.id);
             if (!landlordRecord) {
                 return res.status(403).json({ 
@@ -24,14 +20,12 @@ class RentalPostController {
                 electricity_price, water_price
             } = req.body;
 
-            // Validation
             if (!title || !price || !area || !address_detail || !province_code || !ward_code) {
                 return res.status(400).json({
                     message: 'Invalid value'
                 });
             }
 
-            // Kiểm tra giá trị hợp lệ
             if (typeof price !== 'number' || price <= 0 || typeof area !== 'number' || area <= 0) {
                 return res.status(400).json({ message: 'Invalid value' });
             }
@@ -65,13 +59,9 @@ class RentalPostController {
         }
     }
 
-    // READ - Lấy tất cả bài đăng (có filter và phân quyền)
     async getAllPosts(req, res) {
         try {
-            // Yêu cầu đăng nhập
             if (!req.user) {
-                // Vẫn cho phép người dùng không đăng nhập xem các bài đã approved
-                // Bằng cách truyền user=null vào model
             }
 
             const {
@@ -90,8 +80,6 @@ class RentalPostController {
                 offset: offset ? parseInt(offset) : undefined,
             };
 
-            // Logic phân quyền đã được chuyển vào Model
-            // Chỉ cần truyền `filters` và `req.user`
             const posts = await RentalPost.findAll(filters, req.user);
             const total = await RentalPost.countAll(filters, req.user);
 
@@ -106,10 +94,8 @@ class RentalPostController {
         }
     }
 
-    // READ - Lấy chi tiết 1 bài đăng
     async getPostById(req, res) {
         try {
-            // Yêu cầu đăng nhập
             if (!req.user) {
                 return res.status(401).json({ message: 'Vui lòng đăng nhập để xem bài đăng' });
             }
@@ -121,10 +107,7 @@ class RentalPostController {
                 return res.status(404).json({ message: 'Không tìm thấy bài đăng' });
             }
 
-            // Kiểm tra quyền xem
-            // Tenant và Landlord chỉ xem được bài approved
             if ((req.user.role === 'tenant' || req.user.role === 'landlord') && post.status !== 'approved') {
-                // Landlord vẫn xem được bài của mình dù chưa approved
                 if (req.user.role === 'landlord' && post.landlord_id === req.user.id) {
                     return res.json({
                         message: 'Lấy thông tin bài đăng thành công',
@@ -144,7 +127,6 @@ class RentalPostController {
         }
     }
 
-    // UPDATE - Cập nhật bài đăng (chỉ landlord chủ bài)
     async updatePost(req, res) {
         try {
             const { id } = req.params;
@@ -154,12 +136,10 @@ class RentalPostController {
                 return res.status(404).json({ message: 'Không tìm thấy bài đăng' });
             }
 
-            // Chỉ landlord chủ bài mới được sửa
             if (req.user.role !== 'landlord' || post.landlord_id !== req.user.id) {
                 return res.status(403).json({ message: 'Không có quyền chỉnh sửa bài đăng này' });
             }
 
-            // Không cho sửa bài đã approved (có thể thay đổi rule này)
             if (post.status === 'approved') {
                 return res.status(400).json({ message: 'Không thể sửa bài đăng đã được duyệt. Vui lòng liên hệ admin.' });
             }
@@ -193,7 +173,6 @@ class RentalPostController {
         }
     }
 
-    // DELETE - Xóa bài đăng
     async deletePost(req, res) {
         try {
             const { id } = req.params;
@@ -203,8 +182,6 @@ class RentalPostController {
                 return res.status(404).json({ message: 'Không tìm thấy bài đăng' });
             }
 
-            // Landlord chỉ xóa được bài của mình
-            // Admin xóa được tất cả
             if (req.user.role === 'landlord' && post.landlord_id !== req.user.id) {
                 return res.status(403).json({ message: 'Không có quyền xóa bài đăng này' });
             }
@@ -224,14 +201,13 @@ class RentalPostController {
         }
     }
 
-    // ADMIN - Duyệt bài đăng
     async approvePost(req, res) {
         try {
             if (req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'Chỉ admin mới có quyền duyệt bài' });
             }
 
-            const { id } = req.body; // Đọc id từ body
+            const { id } = req.body;
 
             if (!id) {
                 return res.status(400).json({ message: 'Vui lòng cung cấp id của bài đăng trong body' });
@@ -259,14 +235,13 @@ class RentalPostController {
         }
     }
 
-    // ADMIN - Từ chối bài đăng
     async rejectPost(req, res) {
         try {
             if (req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'Chỉ admin mới có quyền từ chối bài' });
             }
 
-            const { id, rejection_reason } = req.body; // Đọc id từ body
+            const { id, rejection_reason } = req.body;
 
             if (!id) {
                 return res.status(400).json({ message: 'Vui lòng cung cấp id của bài đăng trong body' });
@@ -282,7 +257,6 @@ class RentalPostController {
                 return res.status(404).json({ message: 'Không tìm thấy bài đăng' });
             }
 
-            // RULE: Không thể reject bài đã được duyệt
             if (post.status === 'approved') {
                 return res.status(400).json({ message: 'Không thể từ chối bài đăng đã được duyệt. Vui lòng sử dụng chức năng xóa.' });
             }
@@ -299,7 +273,6 @@ class RentalPostController {
         }
     }
 
-    // Lấy bài đăng của landlord (dành cho landlord xem bài của mình)
     async getMyPosts(req, res) {
         try {
             if (req.user.role !== 'landlord') {

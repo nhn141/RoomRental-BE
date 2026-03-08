@@ -1,4 +1,3 @@
-// Export tất cả models từ một file duy nhất
 const User = require('./User');
 const Admin = require('./Admin');
 const Tenant = require('./Tenant');

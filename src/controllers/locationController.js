@@ -1,8 +1,6 @@
-// controllers/locationController.js
 const { Province, Ward } = require('../models');
 
 class LocationController {
-    // GET /locations/provinces - Lấy tất cả provinces
     async getProvinces(req, res) {
         try {
             const provinces = await Province.findAll();
@@ -16,17 +14,14 @@ class LocationController {
         }
     }
 
-    // GET /locations/wards - Lấy tất cả wards hoặc filter by province_code
     async getWards(req, res) {
         try {
             const { province_code } = req.query;
 
             let wards;
             if (province_code) {
-                // Lấy wards của province cụ thể
                 wards = await Ward.findByProvinceId(province_code);
             } else {
-                // Lấy tất cả wards
                 wards = await Ward.findAll();
             }
 
@@ -40,7 +35,6 @@ class LocationController {
         }
     }
 
-    // GET /locations/search-province - Tìm kiếm provinces
     async searchProvinces(req, res) {
         try {
             const { keyword } = req.query;
@@ -60,7 +54,6 @@ class LocationController {
         }
     }
 
-    // GET /locations/search-ward - Tìm kiếm wards
     async searchWards(req, res) {
         try {
             const { province_code, keyword } = req.query;

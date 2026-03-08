@@ -1,11 +1,8 @@
-// controllers/recommendationController.js
 const { RentalPost } = require('../models');
 
 class RecommendationController {
-    // GET - Tenant lấy danh sách phòng được gợi ý dựa trên profile
     async getRecommendedPosts(req, res) {
         try {
-            // Chỉ tenant mới được sử dụng feature này
             if (req.user.role !== 'tenant') {
                 return res.status(403).json({ message: 'Chỉ tenant mới có quyền sử dụng tính năng này.' });
             }
@@ -26,7 +23,7 @@ class RecommendationController {
                 total: recommendedPosts.length,
                 recommendations: recommendedPosts.map(post => ({
                     ...post,
-                    priority_rank: undefined // Không trả về priority_rank cho client
+                    priority_rank: undefined
                 }))
             });
         } catch (err) {

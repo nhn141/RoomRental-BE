@@ -1,10 +1,8 @@
 const { Contract, RentalPost, Tenant, Landlord } = require('../models');
 
 class ContractController {
-    // CREATE - Tenant tạo contract mới
     async createContract(req, res) {
         try {
-            // Chỉ tenant mới được tạo contract
             if (req.user.role !== 'tenant') {
                 return res.status(403).json({ message: 'Chỉ tenant mới có quyền tạo hợp đồng.' });
             }
@@ -13,21 +11,19 @@ class ContractController {
                 post_id, start_date, end_date, monthly_rent, deposit_amount, contract_url
             } = req.body;
 
-            // Validation
             if (!post_id || !start_date || !end_date) {
                 return res.status(400).json({
                     message: 'Thiếu thông tin bắt buộc: post_id, start_date, end_date'
                 });
             }
 
-            // Date validation: end_date must be after start_date and at least 30 days later
             const sd = new Date(start_date);
             const ed = new Date(end_date);
             if (isNaN(sd.getTime()) || isNaN(ed.getTime())) {
                 return res.status(400).json({ message: 'Ngày không hợp lệ' });
             }
             const diffMs = ed - sd;
-            const minMs = 30 * 24 * 60 * 60 * 1000; // 30 days
+            const minMs = 30 * 24 * 60 * 60 * 1000;
             if (diffMs <= 0) {
                 return res.status(400).json({ message: 'Ngày kết thúc phải sau ngày bắt đầu' });
             }
@@ -35,7 +31,6 @@ class ContractController {
                 return res.status(400).json({ message: 'Thời hạn hợp đồng phải ít nhất 30 ngày' });
             }
 
-            // Check if post exists and is approved
             const post = await RentalPost.findById(post_id);
             if (!post) {
                 return res.status(404).json({ message: 'Bài đăng không tồn tại' });
@@ -45,7 +40,6 @@ class ContractController {
                 return res.status(400).json({ message: 'Chỉ có thể tạo hợp đồng cho bài đăng đã được duyệt' });
             }
 
-            // Check if tenant already has contract for this post
             const existingContract = await Contract.findByPostAndTenant(post_id, req.user.id);
             if (existingContract) {
                 return res.status(400).json({ message: 'Bạn đã tạo hợp đồng cho bài đăng này' });
@@ -64,7 +58,6 @@ class ContractController {
 
             const newContract = await Contract.create(contractData);
 
-            // Update rental post: set is_available = false
             await RentalPost.update(post_id, { is_available: false });
 
             return res.status(201).json({
@@ -77,7 +70,6 @@ class ContractController {
         }
     }
 
-    // READ - Lấy chi tiết contract
     async getContractById(req, res) {
         try {
             const { id } = req.params;
@@ -87,7 +79,6 @@ class ContractController {
                 return res.status(404).json({ message: 'Không tìm thấy hợp đồng' });
             }
 
-            // Check permissions: chỉ tenant, landlord, hoặc admin mới xem được
             if (req.user.role === 'tenant' && contract.tenant_id !== req.user.id) {
                 return res.status(403).json({ message: 'Bạn không có quyền xem hợp đồng này' });
             }
@@ -106,7 +97,6 @@ class ContractController {
         }
     }
 
-    // READ - Lấy danh sách contracts (có filter và phân quyền)
     async getAllContracts(req, res) {
         try {
             const { status, post_id } = req.query;
@@ -129,7 +119,6 @@ class ContractController {
         }
     }
 
-    // READ - Lấy contracts của tenant
     async getMyContracts(req, res) {
         try {
             if (req.user.role !== 'tenant') {
@@ -150,7 +139,6 @@ class ContractController {
         }
     }
 
-    // READ - Lấy contracts của landlord
     async getLandlordContracts(req, res) {
         try {
             if (req.user.role !== 'landlord') {
@@ -171,7 +159,6 @@ class ContractController {
         }
     }
 
-    // UPDATE - Cập nhật contract (chỉ landlord hoặc tenant chủ contract mới được)
     async updateContract(req, res) {
         try {
             const { id } = req.params;
@@ -181,7 +168,6 @@ class ContractController {
                 return res.status(404).json({ message: 'Không tìm thấy hợp đồng' });
             }
 
-            // Chỉ landlord chủ bài hoặc tenant chủ contract mới được sửa
             if (req.user.role === 'landlord' && contract.landlord_id !== req.user.id) {
                 return res.status(403).json({ message: 'Không có quyền chỉnh sửa hợp đồng này' });
             }
@@ -196,7 +182,6 @@ class ContractController {
             if (start_date !== undefined) updates.start_date = start_date;
             if (end_date !== undefined) updates.end_date = end_date;
 
-            // If start_date or end_date provided, validate their relation (end > start and >=30 days)
             if (start_date !== undefined || end_date !== undefined) {
                 const newStart = start_date !== undefined ? new Date(start_date) : new Date(contract.start_date);
                 const newEnd = end_date !== undefined ? new Date(end_date) : new Date(contract.end_date);
@@ -216,7 +201,6 @@ class ContractController {
             if (deposit_amount !== undefined) updates.deposit_amount = deposit_amount;
             if (contract_url !== undefined) updates.contract_url = contract_url;
             if (status !== undefined) {
-                // Chỉ admin hoặc landlord mới được thay đổi status
                 if (req.user.role !== 'admin' && req.user.role !== 'landlord') {
                     return res.status(403).json({ message: 'Không có quyền thay đổi trạng thái hợp đồng' });
                 }
@@ -235,7 +219,6 @@ class ContractController {
         }
     }
 
-    // DELETE - Xóa contract
     async deleteContract(req, res) {
         try {
             const { id } = req.params;
@@ -245,9 +228,6 @@ class ContractController {
                 return res.status(404).json({ message: 'Không tìm thấy hợp đồng' });
             }
 
-            // Tenant chỉ xóa được hợp đồng của mình
-            // Landlord xóa được hợp đồng liên quan đến bài của mình
-            // Admin xóa được tất cả
             if (req.user.role === 'tenant' && contract.tenant_id !== req.user.id) {
                 return res.status(403).json({ message: 'Không có quyền xóa hợp đồng này' });
             }
@@ -262,7 +242,6 @@ class ContractController {
 
             await Contract.delete(id);
 
-            // Update rental post: set is_available = true
             await RentalPost.update(contract.post_id, { is_available: true });
 
             return res.json({
@@ -274,7 +253,6 @@ class ContractController {
         }
     }
 
-    // TERMINATE - Kết thúc hợp đồng (chỉ landlord hoặc admin)
     async terminateContract(req, res) {
         try {
             const { id } = req.params;
@@ -298,7 +276,6 @@ class ContractController {
 
             const updatedContract = await Contract.updateStatus(id, 'terminated');
 
-            // Update rental post: set is_available = true
             await RentalPost.update(contract.post_id, { is_available: true });
 
             return res.json({

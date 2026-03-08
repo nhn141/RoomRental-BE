@@ -1,14 +1,11 @@
-// controllers/profileController.js
 const { User, Admin, Tenant, Landlord } = require('../models');
 
 class ProfileController {
-    // GET /profile - Xem profile của user hiện tại
     async getProfile(req, res) {
         try {
             const userId = req.user.id;
             const role = req.user.role;
 
-            // Lấy thông tin cơ bản từ users
             const user = await User.findById(userId);
             if (!user) {
                 return res.status(404).json({ message: 'Không tìm thấy người dùng' });
@@ -24,7 +21,6 @@ class ProfileController {
                 updated_at: user.updated_at
             };
 
-            // Lấy thông tin chi tiết theo role
             if (role === 'admin') {
                 const adminInfo = await Admin.findByUserId(userId);
                 if (adminInfo) {
@@ -68,14 +64,12 @@ class ProfileController {
         }
     }
 
-    // PUT /edit-profile - Cập nhật profile của user hiện tại
     async updateProfile(req, res) {
         try {
             const userId = req.user.id;
             const role = req.user.role;
             const { full_name, phone_number, department, identity_card, address_detail, gender, dob, bio, target_province_code, target_ward_code, budget_min, budget_max } = req.body;
 
-            // Validation for invalid values
             if (full_name !== undefined) {
                 const name = full_name.toString().trim();
                 if (name === '') {
@@ -117,12 +111,10 @@ class ProfileController {
                 }
             }
 
-            // Cập nhật thông tin trong bảng users (chỉ full_name)
             if (full_name !== undefined) {
                 await User.update(userId, { full_name });
             }
 
-            // Cập nhật thông tin chi tiết theo role
             if (role === 'admin') {
                 const adminUpdates = {};
                 if (department !== undefined) adminUpdates.department = department;
@@ -159,7 +151,6 @@ class ProfileController {
                 }
             }
 
-            // Lấy lại thông tin profile đã cập nhật
             const user = await User.findById(userId);
             let profile = {
                 id: user.id,

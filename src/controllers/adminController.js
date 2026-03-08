@@ -1,12 +1,9 @@
-// controllers/adminController.js
 const bcrypt = require('bcrypt');
 const db = require('../db/db.js');
 const { User, Admin } = require('../models');
 
 class AdminController {
-    // POST /create - Tạo admin mới
     async createAdmin(req, res) {
-        // Kiểm tra quyền admin
         if (req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Chỉ admin mới có quyền tạo tài khoản admin mới.' });
         }
@@ -21,18 +18,15 @@ class AdminController {
         try {
             await client.query('BEGIN');
 
-            // Kiểm tra email đã tồn tại
             const existingUser = await User.findByEmail(email);
             if (existingUser) {
                 await client.query('ROLLBACK');
                 return res.status(409).json({ message: 'Email đã tồn tại' });
             }
 
-            // Hash password
             const saltRounds = 10;
             const passwordHash = await bcrypt.hash(password, saltRounds);
 
-            // Tạo user
             const newUser = await User.create({
                 email,
                 password_hash: passwordHash,
@@ -40,7 +34,6 @@ class AdminController {
                 role: 'admin'
             });
 
-            // Tạo admin
             await Admin.create({
                 user_id: newUser.id,
                 department,
@@ -49,7 +42,6 @@ class AdminController {
 
             await client.query('COMMIT');
 
-            // Không trả về token ở đây, admin mới phải tự đăng nhập
             return res.status(201).json({
                 message: 'Tạo tài khoản admin thành công.',
                 user: {
@@ -70,16 +62,13 @@ class AdminController {
         }
     }
 
-    // GET - Lấy danh sách tất cả users
     async getAllUsers(req, res) {
         try {
-            // Chỉ admin mới được xem danh sách users
             if (req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'Chỉ admin mới có quyền xem danh sách người dùng.' });
             }
 
-            const { role } = req.query; // Filter by role: admin, landlord, tenant (optional)
-
+            const { role } = req.query; 
             let query = `
                 SELECT u.id, u.email, u.full_name, u.role, u.is_active, u.created_at
                 FROM public.users u
@@ -107,15 +96,13 @@ class AdminController {
         }
     }
 
-    // GET - Lấy danh sách tất cả contracts
     async getAllContracts(req, res) {
         try {
-            // Chỉ admin mới được xem danh sách contracts
             if (req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'Chỉ admin mới có quyền xem danh sách hợp đồng.' });
             }
 
-            const { status } = req.query; // Filter by status (optional)
+            const { status } = req.query; 
 
             let query = `
                 SELECT c.id, c.post_id, c.tenant_id, c.landlord_id, c.start_date, c.end_date,
@@ -151,17 +138,14 @@ class AdminController {
         }
     }
 
-    // GET - Lấy chi tiết hồ sơ người dùng
     async getUserDetail(req, res) {
         try {
-            // Chỉ admin mới được xem chi tiết hồ sơ user
             if (req.user.role !== 'admin') {
                 return res.status(403).json({ message: 'Chỉ admin mới có quyền xem chi tiết hồ sơ người dùng.' });
             }
 
             const { id } = req.params;
 
-            // Lấy thông tin user
             const userResult = await db.query(
                 `SELECT id, email, full_name, role, is_active, created_at
                  FROM public.users
@@ -176,7 +160,6 @@ class AdminController {
             const user = userResult.rows[0];
             let profileData = null;
 
-            // Lấy thông tin profile theo role
             if (user.role === 'admin') {
                 const adminResult = await db.query(
                     `SELECT * FROM public.admins WHERE user_id = $1`,
