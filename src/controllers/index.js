@@ -5,6 +5,8 @@ const rentalPostController = require('./rentalPostController');
 const contractController = require('./contractController');
 const locationController = require('./locationController');
 const recommendationController = require('./recommendationController');
+const notificationController = require('./notificationController');
+const chatController = require('./chatController');
 
 module.exports = {
     authController,
@@ -14,4 +16,6 @@ module.exports = {
     contractController,
     locationController,
     recommendationController,
+    notificationController,
+    chatController,
 };

@@ -6,6 +6,12 @@ class ProfileController {
         return res.status(result.status).json(result.body);
     }
 
+    async getPublicProfile(req, res) {
+        const { id } = req.params;
+        const result = await profileService.getPublicProfile(id);
+        return res.status(result.status).json(result.body);
+    }
+
     async updateProfile(req, res) {
         const result = await profileService.updateProfile(req.user.id, req.user.role, req.body);
         return res.status(result.status).json(result.body);
@@ -21,4 +27,3 @@ class ProfileController {
 }
 
 module.exports = new ProfileController();
-
