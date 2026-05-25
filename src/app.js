@@ -29,4 +29,10 @@ app.use('/api/contracts', contractRouter);
 const locationRouter = require('./routes/location');
 app.use('/api/locations', locationRouter);
 
+const notificationRouter = require('./routes/notification');
+app.use('/api/notifications', notificationRouter);
+
+const chatRouter = require('./routes/chat');
+app.use('/api/chat', chatRouter);
+
 module.exports = app;
