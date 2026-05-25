@@ -17,6 +17,28 @@ class User {
         return result.rows[0];
     }
 
+    static async findPublicById(id) {
+        const result = await db.query(
+            'SELECT id, email, full_name, role, is_active, avatar_url, created_at, updated_at FROM public.users WHERE id = $1 AND is_active = true',
+            [id]
+        );
+        return result.rows[0];
+    }
+
+    static async searchByEmail(email, excludeUserId = null, limit = 10) {
+        const result = await db.query(
+            `SELECT id, email, full_name, role, avatar_url
+             FROM public.users
+             WHERE is_active = true
+               AND email ILIKE $1
+               AND ($2::int IS NULL OR id <> $2)
+             ORDER BY email ASC
+             LIMIT $3`,
+            [`%${email}%`, excludeUserId, limit]
+        );
+        return result.rows;
+    }
+
     static async findByEmailWithPassword(email) {
         const result = await db.query(
             'SELECT * FROM public.users WHERE email = $1 AND is_active = true',
@@ -126,7 +148,7 @@ class User {
     }
 
     static async findAll(filters = {}) {
-        let query = 'SELECT id, email, full_name, role, is_active, created_at FROM public.users WHERE 1=1';
+        let query = 'SELECT id, email, full_name, role, is_active, avatar_url, created_at FROM public.users WHERE 1=1';
         const values = [];
         let paramCount = 1;
 

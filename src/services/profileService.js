@@ -67,6 +67,60 @@ class ProfileService {
         }
     }
 
+    async getPublicProfile(userId) {
+        try {
+            const user = await userRepository.findPublicById(userId);
+            if (!user) {
+                return { status: 404, body: { message: 'Không tìm thấy người dùng' } };
+            }
+
+            const profile = {
+                id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role,
+                avatar_url: user.avatar_url || null,
+                created_at: user.created_at
+            };
+
+            if (user.role === 'tenant') {
+                const tenantInfo = await tenantRepository.findByUserIdWithNames(userId);
+                if (tenantInfo) {
+                    profile.phone_number = tenantInfo.phone_number;
+                    profile.target_province_name = tenantInfo.target_province_name;
+                    profile.target_ward_name = tenantInfo.target_ward_name;
+                    profile.budget_min = tenantInfo.budget_min;
+                    profile.budget_max = tenantInfo.budget_max;
+                    profile.bio = tenantInfo.bio;
+                }
+            } else if (user.role === 'landlord') {
+                const landlordInfo = await landlordRepository.findByUserId(userId);
+                if (landlordInfo) {
+                    profile.phone_number = landlordInfo.phone_number;
+                    profile.address_detail = landlordInfo.address_detail;
+                    profile.reputation_score = landlordInfo.reputation_score;
+                    profile.bio = landlordInfo.bio;
+                }
+            } else if (user.role === 'admin') {
+                const adminInfo = await adminRepository.findByUserId(userId);
+                if (adminInfo) {
+                    profile.department = adminInfo.department;
+                }
+            }
+
+            return {
+                status: 200,
+                body: {
+                    message: 'Lấy hồ sơ người dùng thành công',
+                    profile
+                }
+            };
+        } catch (err) {
+            console.error('Get Public Profile Error:', err);
+            return { status: 500, body: { message: 'Lỗi server' } };
+        }
+    }
+
     async updateProfile(userId, role, data) {
         try {
             const { full_name, phone_number, department, identity_card, address_detail, gender, dob, bio, target_province_code, target_ward_code, budget_min, budget_max } = data;

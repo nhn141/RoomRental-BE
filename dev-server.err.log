@@ -1,0 +1,35 @@
+Failed to initialize realtime tables: AggregateError [EACCES]: 
+    at D:\RoomRentalProject\RoomRental-BE\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async initRealtimeTables (D:\RoomRentalProject\RoomRental-BE\src\db\initRealtimeTables.js:4:5) {
+  code: 'EACCES',
+  [errors]: [
+    Error: connect EACCES 3.109.171.244:6543
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4092,
+      code: 'EACCES',
+      syscall: 'connect',
+      address: '3.109.171.244',
+      port: 6543
+    },
+    Error: connect EACCES 3.111.225.200:6543
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4092,
+      code: 'EACCES',
+      syscall: 'connect',
+      address: '3.111.225.200',
+      port: 6543
+    },
+    Error: connect EACCES 13.200.110.68:6543
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4092,
+      code: 'EACCES',
+      syscall: 'connect',
+      address: '13.200.110.68',
+      port: 6543
+    }
+  ]
+}

@@ -9,6 +9,14 @@ class UserRepository {
         return User.findByEmail(email);
     }
 
+    async findPublicById(id) {
+        return User.findPublicById(id);
+    }
+
+    async searchByEmail(email, excludeUserId = null, limit = 10) {
+        return User.searchByEmail(email, excludeUserId, limit);
+    }
+
     async findByEmailWithPassword(email) {
         return User.findByEmailWithPassword(email);
     }

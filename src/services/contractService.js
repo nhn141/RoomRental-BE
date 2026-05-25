@@ -1,4 +1,5 @@
 const { contractRepository, rentalPostRepository } = require('../repositories');
+const notificationService = require('./notificationService');
 
 class ContractService {
     async createContract(data, user) {
@@ -57,6 +58,18 @@ class ContractService {
             const newContract = await contractRepository.create(contractData);
 
             await rentalPostRepository.update(post_id, { is_available: false });
+            await notificationService.safeCreateNotification({
+                user_id: post.landlord_id,
+                actor_id: user.id,
+                type: 'contract_created',
+                title: 'Hợp đồng mới',
+                body: `${user.full_name || user.email} đã tạo hợp đồng cho bài đăng "${post.title}"`,
+                link_url: `/contracts/${newContract.id}`,
+                metadata: {
+                    contract_id: newContract.id,
+                    post_id
+                }
+            });
 
             return {
                 status: 201,
@@ -202,6 +215,24 @@ class ContractService {
             }
 
             const updatedContract = await contractRepository.update(id, updates);
+            const recipientId = String(user.id) === String(contract.tenant_id)
+                ? contract.landlord_id
+                : contract.tenant_id;
+
+            if (recipientId && String(recipientId) !== String(user.id)) {
+                await notificationService.safeCreateNotification({
+                    user_id: recipientId,
+                    actor_id: user.id,
+                    type: 'contract_updated',
+                    title: 'Hợp đồng được cập nhật',
+                    body: `${user.full_name || user.email} đã cập nhật hợp đồng #${contract.id}`,
+                    link_url: `/contracts/${contract.id}`,
+                    metadata: {
+                        contract_id: contract.id,
+                        post_id: contract.post_id
+                    }
+                });
+            }
 
             return {
                 status: 200,
@@ -239,6 +270,24 @@ class ContractService {
             await contractRepository.delete(id);
 
             await rentalPostRepository.update(contract.post_id, { is_available: true });
+            const recipientId = String(user.id) === String(contract.tenant_id)
+                ? contract.landlord_id
+                : contract.tenant_id;
+
+            if (recipientId && String(recipientId) !== String(user.id)) {
+                await notificationService.safeCreateNotification({
+                    user_id: recipientId,
+                    actor_id: user.id,
+                    type: 'contract_deleted',
+                    title: 'Hợp đồng đã bị xóa',
+                    body: `${user.full_name || user.email} đã xóa hợp đồng #${contract.id}`,
+                    link_url: user.role === 'landlord' ? '/contracts/my' : '/contracts/landlord',
+                    metadata: {
+                        contract_id: contract.id,
+                        post_id: contract.post_id
+                    }
+                });
+            }
 
             return { status: 200, body: { message: 'Xóa hợp đồng thành công' } };
         } catch (err) {
@@ -270,6 +319,24 @@ class ContractService {
             const updatedContract = await contractRepository.updateStatus(id, 'terminated');
 
             await rentalPostRepository.update(contract.post_id, { is_available: true });
+            const recipientId = String(user.id) === String(contract.tenant_id)
+                ? contract.landlord_id
+                : contract.tenant_id;
+
+            if (recipientId && String(recipientId) !== String(user.id)) {
+                await notificationService.safeCreateNotification({
+                    user_id: recipientId,
+                    actor_id: user.id,
+                    type: 'contract_terminated',
+                    title: 'Hợp đồng đã kết thúc',
+                    body: `${user.full_name || user.email} đã kết thúc hợp đồng #${contract.id}`,
+                    link_url: `/contracts/${contract.id}`,
+                    metadata: {
+                        contract_id: contract.id,
+                        post_id: contract.post_id
+                    }
+                });
+            }
 
             return {
                 status: 200,

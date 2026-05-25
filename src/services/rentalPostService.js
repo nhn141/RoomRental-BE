@@ -1,4 +1,5 @@
-const { rentalPostRepository, landlordRepository } = require('../repositories');
+const { rentalPostRepository, landlordRepository, userRepository } = require('../repositories');
+const notificationService = require('./notificationService');
 
 class RentalPostService {
     async createPost(data, user) {
@@ -45,6 +46,21 @@ class RentalPostService {
             };
 
             const newPost = await rentalPostRepository.create(postData);
+            const admins = await userRepository.findAll({ role: 'admin', is_active: true });
+
+            await notificationService.safeCreateNotificationsForUsers(
+                admins.map((admin) => admin.id),
+                {
+                    actor_id: user.id,
+                    type: 'rental_post_pending',
+                    title: 'Bài đăng mới cần duyệt',
+                    body: `${user.full_name || user.email} vừa tạo bài đăng "${title}"`,
+                    link_url: '/rental-posts?status=pending',
+                    metadata: {
+                        post_id: newPost.id
+                    }
+                }
+            );
 
             return {
                 status: 201,
@@ -150,6 +166,21 @@ class RentalPostService {
             if (images !== undefined) updates.images = images;
 
             const updatedPost = await rentalPostRepository.update(id, updates);
+            const admins = await userRepository.findAll({ role: 'admin', is_active: true });
+
+            await notificationService.safeCreateNotificationsForUsers(
+                admins.map((admin) => admin.id),
+                {
+                    actor_id: user.id,
+                    type: 'rental_post_updated',
+                    title: 'Bài đăng vừa được cập nhật',
+                    body: `${user.full_name || user.email} đã cập nhật bài đăng "${updatedPost.title}"`,
+                    link_url: `/rental-posts/${id}`,
+                    metadata: {
+                        post_id: updatedPost.id
+                    }
+                }
+            );
 
             return {
                 status: 200,
@@ -182,6 +213,20 @@ class RentalPostService {
 
             await rentalPostRepository.delete(id);
 
+            if (user.role === 'admin' && String(post.landlord_id) !== String(user.id)) {
+                await notificationService.safeCreateNotification({
+                    user_id: post.landlord_id,
+                    actor_id: user.id,
+                    type: 'rental_post_deleted',
+                    title: 'Bài đăng đã bị xóa',
+                    body: `Bài đăng "${post.title}" của bạn đã bị admin xóa`,
+                    link_url: '/my-rental-posts',
+                    metadata: {
+                        post_id: post.id
+                    }
+                });
+            }
+
             return { status: 200, body: { message: 'Xóa bài đăng thành công' } };
         } catch (err) {
             console.error('Delete Post Error:', err);
@@ -210,6 +255,18 @@ class RentalPostService {
             }
 
             const approvedPost = await rentalPostRepository.approve(id, user.id);
+
+            await notificationService.safeCreateNotification({
+                user_id: post.landlord_id,
+                actor_id: user.id,
+                type: 'rental_post_approved',
+                title: 'Bài đăng đã được duyệt',
+                body: `Bài đăng "${post.title}" của bạn đã được duyệt`,
+                link_url: `/rental-posts/${post.id}`,
+                metadata: {
+                    post_id: post.id
+                }
+            });
 
             return {
                 status: 200,
@@ -249,6 +306,19 @@ class RentalPostService {
             }
 
             const rejectedPost = await rentalPostRepository.reject(id, user.id, rejectionReason);
+
+            await notificationService.safeCreateNotification({
+                user_id: post.landlord_id,
+                actor_id: user.id,
+                type: 'rental_post_rejected',
+                title: 'Bài đăng bị từ chối',
+                body: `Bài đăng "${post.title}" bị từ chối: ${rejectionReason}`,
+                link_url: `/rental-posts/${post.id}`,
+                metadata: {
+                    post_id: post.id,
+                    rejection_reason: rejectionReason
+                }
+            });
 
             return {
                 status: 200,

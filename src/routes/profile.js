@@ -6,6 +6,7 @@ const upload = require('../middleware/upload');
 const router = express.Router();
 
 router.get('/', isAuthenticated, profileController.getProfile);
+router.get('/users/:id', isAuthenticated, (req, res) => profileController.getPublicProfile(req, res));
 
 router.put('/edit-profile', isAuthenticated, profileController.updateProfile);
 
@@ -25,4 +26,4 @@ router.post(
     profileController.uploadAvatar
 );
 
-module.exports = router;
+module.exports = router;
