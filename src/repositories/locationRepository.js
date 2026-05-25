@@ -2,7 +2,6 @@ const Province = require('../models/Province');
 const Ward = require('../models/Ward');
 
 class LocationRepository {
-    // Province methods
     async findProvinceById(id) {
         return Province.findById(id);
     }

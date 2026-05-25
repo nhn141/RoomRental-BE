@@ -1,4 +1,6 @@
 const { userRepository, adminRepository, tenantRepository, landlordRepository } = require('../repositories');
+const cloudinary = require('../config/cloudinary');
+const streamifier = require('streamifier');
 
 class ProfileService {
     async getProfile(userId, role) {
@@ -14,6 +16,7 @@ class ProfileService {
                 full_name: user.full_name,
                 role: user.role,
                 is_active: user.is_active,
+                avatar_url: user.avatar_url || null,
                 created_at: user.created_at,
                 updated_at: user.updated_at
             };
@@ -160,6 +163,7 @@ class ProfileService {
                 full_name: user.full_name,
                 role: user.role,
                 is_active: user.is_active,
+                avatar_url: user.avatar_url || null,
                 updated_at: user.updated_at
             };
 
@@ -206,6 +210,44 @@ class ProfileService {
         } catch (err) {
             console.error('Update Profile Error:', err);
             return { status: 500, body: { message: 'Lỗi server' } };
+        }
+    }
+
+    async uploadAvatar(userId, fileBuffer, mimetype) {
+        try {
+            // Upload buffer lên Cloudinary qua stream
+            const avatarUrl = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        folder: 'room-rental/avatars',
+                        public_id: `user_${userId}`,
+                        overwrite: true,
+                        transformation: [
+                            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+                            { quality: 'auto', fetch_format: 'auto' },
+                        ],
+                    },
+                    (error, result) => {
+                        if (error) return reject(error);
+                        resolve(result.secure_url);
+                    }
+                );
+                streamifier.createReadStream(fileBuffer).pipe(uploadStream);
+            });
+
+            // Lưu URL vào DB
+            await userRepository.update(userId, { avatar_url: avatarUrl });
+
+            return {
+                status: 200,
+                body: {
+                    message: 'Upload ảnh đại diện thành công',
+                    avatar_url: avatarUrl,
+                },
+            };
+        } catch (err) {
+            console.error('Upload Avatar Error:', err);
+            return { status: 500, body: { message: 'Lỗi khi upload ảnh' } };
         }
     }
 }

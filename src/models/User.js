@@ -3,7 +3,7 @@ const db = require('../db/db');
 class User {
     static async findById(id) {
         const result = await db.query(
-            'SELECT id, email, full_name, role, is_active, created_at, updated_at FROM public.users WHERE id = $1',
+            'SELECT id, email, full_name, role, is_active, avatar_url, created_at, updated_at FROM public.users WHERE id = $1',
             [id]
         );
         return result.rows[0];

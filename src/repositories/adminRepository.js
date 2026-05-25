@@ -22,9 +22,6 @@ class AdminRepository {
         return Admin.delete(userId);
     }
 
-    /**
-     * Lấy danh sách users với filter role (di chuyển từ adminController.getAllUsers)
-     */
     async findAllUsersWithFilter(role) {
         let query = `
             SELECT u.id, u.email, u.full_name, u.role, u.is_active, u.created_at
