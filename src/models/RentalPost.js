@@ -5,6 +5,7 @@ class RentalPost {
         const result = await db.query(
             `SELECT rp.*, 
                     u.full_name as landlord_name, u.email as landlord_email,
+                    u.avatar_url as landlord_avatar_url,
                     l.phone_number as landlord_phone, l.reputation_score,
                     p.full_name as province_name,
                     w.name_with_type as ward_name,
@@ -122,6 +123,8 @@ class RentalPost {
         let query = `
             SELECT rp.*, 
                    u.full_name as landlord_name,
+                   u.email as landlord_email,
+                   u.avatar_url as landlord_avatar_url,
                    l.reputation_score,
                    p.full_name as province_name,
                    w.name_with_type as ward_name
@@ -253,8 +256,11 @@ class RentalPost {
 
     static async findByLandlord(landlord_id, status = null) {
         let query = `
-            SELECT rp.*, p.full_name as province_name, w.name_with_type as ward_name
+            SELECT rp.*, p.full_name as province_name, w.name_with_type as ward_name,
+                   u.full_name as landlord_name, u.email as landlord_email,
+                   u.avatar_url as landlord_avatar_url
             FROM public.rental_posts rp
+            JOIN public.users u ON rp.landlord_id = u.id
             LEFT JOIN public.provinces p ON rp.province_code = p.id
             LEFT JOIN public.wards w ON rp.ward_code = w.id
             WHERE rp.landlord_id = $1
