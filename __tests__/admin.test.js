@@ -2,6 +2,7 @@
 const request = require('supertest');
 const app = require('../src/app');
 const TestHelper = require('./setup/testHelper');
+const { getAccessTokenCookieValue } = require('./setup/authCookieHelper');
 const db = require('../src/db/db');
 
 const testHelper = new TestHelper();
@@ -10,23 +11,24 @@ let testUserId, testContractId;
 
 // Setup: Tạo users và data
 beforeAll(async () => {
+    await testHelper.ensureRefreshTokenTable();
     await testHelper.seedAuthTestUsers();
 
     // Login để lấy tokens
     const tenantLogin = await request(app)
         .post('/api/auth/tenant/login')
         .send({ email: 'tenant@test.com', password: 'Test@123456' });
-    tenantToken = tenantLogin.body.token;
+    tenantToken = getAccessTokenCookieValue(tenantLogin);
 
     const landlordLogin = await request(app)
         .post('/api/auth/landlord/login')
         .send({ email: 'landlord@test.com', password: 'Test@123456' });
-    landlordToken = landlordLogin.body.token;
+    landlordToken = getAccessTokenCookieValue(landlordLogin);
 
     const adminLogin = await request(app)
         .post('/api/auth/admin/login')
         .send({ email: 'admin@test.com', password: 'Test@123456' });
-    adminToken = adminLogin.body.token;
+    adminToken = getAccessTokenCookieValue(adminLogin);
 
     // Lấy user ID của tenant để test getUserDetail
     const userResult = await db.query("SELECT id FROM public.users WHERE email = 'tenant@test.com'");

@@ -48,14 +48,25 @@ Tạo file `.env` ở thư mục gốc với các biến sau:
 ```env
 # Server
 PORT=4000
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://localhost:5173
 
 # Database (PostgreSQL connection string)
 DATABASE_URL=postgresql://user:password@host:port/database
 
-# JWT
+# Auth
 JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=7d
+ACCESS_TOKEN_SECRET=your_access_token_secret_key
+ACCESS_TOKEN_EXPIRES_IN=15m
+REFRESH_TOKEN_EXPIRES_IN=7d
+
+# Cookies
+# Local HTTP development
+COOKIE_SECURE=false
+COOKIE_SAME_SITE=lax
+
+# HTTPS cross-site deployment
+# COOKIE_SECURE=true
+# COOKIE_SAME_SITE=none
 
 # Email (SMTP - dùng cho đặt lại mật khẩu)
 EMAIL_HOST=smtp.gmail.com
@@ -65,6 +76,18 @@ EMAIL_PASS=your_app_password
 ```
 
 > **Lưu ý:** File `.env` chứa thông tin nhạy cảm và **không** được commit vào git.
+
+## Supabase migration for refresh tokens
+
+Before using the cookie-based refresh-token flow, run this SQL file in the
+Supabase SQL Editor:
+
+```text
+src/db/migrations/001_create_refresh_tokens.sql
+```
+
+The backend stores only a SHA-256 hash of each refresh token. The browser keeps
+the raw refresh token in an HttpOnly cookie, so JavaScript cannot read it.
 
 ## Scripts
 

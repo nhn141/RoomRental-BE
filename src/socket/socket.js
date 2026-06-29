@@ -2,15 +2,17 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { chatRepository } = require('../repositories');
+const { getAllowedOrigins } = require('../config/cors');
+const { ACCESS_TOKEN_COOKIE_NAME, getCookieValue } = require('../utils/authCookies');
 
 let io = null;
 
-const getAllowedOrigins = () => {
-    const configuredOrigins = process.env.CLIENT_URL || process.env.FRONTEND_URL;
-    if (!configuredOrigins) {
-        return '*';
-    }
-    return configuredOrigins.split(',').map((origin) => origin.trim()).filter(Boolean);
+const getSocketToken = (socket) => {
+    return (
+        socket.handshake.auth?.token ||
+        socket.handshake.query?.token ||
+        getCookieValue(socket.handshake.headers.cookie, ACCESS_TOKEN_COOKIE_NAME)
+    );
 };
 
 const initializeSocket = (server) => {
@@ -23,12 +25,12 @@ const initializeSocket = (server) => {
 
     io.use(async (socket, next) => {
         try {
-            const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+            const token = getSocketToken(socket);
             if (!token) {
                 return next(new Error('Unauthorized'));
             }
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET);
             const user = await User.findById(decoded.id);
 
             if (!user || !user.is_active) {

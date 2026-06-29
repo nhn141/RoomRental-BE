@@ -2,6 +2,7 @@
 const request = require('supertest');
 const app = require('../src/app');
 const TestHelper = require('./setup/testHelper');
+const { getAccessTokenCookieValue } = require('./setup/authCookieHelper');
 const db = require('../src/db/db');
 
 const testHelper = new TestHelper();
@@ -10,6 +11,7 @@ let validProvinceCode, validWardCode;
 
 // Setup: Tạo users
 beforeAll(async () => {
+    await testHelper.ensureRefreshTokenTable();
     await testHelper.seedAuthTestUsers();
 
     // Lấy province và ward code hợp lệ
@@ -26,17 +28,17 @@ beforeAll(async () => {
     const tenantLogin = await request(app)
         .post('/api/auth/tenant/login')
         .send({ email: 'tenant@test.com', password: 'Test@123456' });
-    tenantToken = tenantLogin.body.token;
+    tenantToken = getAccessTokenCookieValue(tenantLogin);
 
     const landlordLogin = await request(app)
         .post('/api/auth/landlord/login')
         .send({ email: 'landlord@test.com', password: 'Test@123456' });
-    landlordToken = landlordLogin.body.token;
+    landlordToken = getAccessTokenCookieValue(landlordLogin);
 
     const adminLogin = await request(app)
         .post('/api/auth/admin/login')
         .send({ email: 'admin@test.com', password: 'Test@123456' });
-    adminToken = adminLogin.body.token;
+    adminToken = getAccessTokenCookieValue(adminLogin);
 
     // Cập nhật tenant profile để có budget và location preference
     await request(app)
@@ -188,7 +190,7 @@ describe('Recommendation Management', () => {
                 .post('/api/auth/tenant/login')
                 .send({ email: 'tenant_no_pref@test.com', password: 'Test@123456' });
 
-            const newTenantToken = loginRes.body.token;
+            const newTenantToken = getAccessTokenCookieValue(loginRes);
 
             const response = await request(app)
                 .get('/api/rental-posts/recommendations/my')

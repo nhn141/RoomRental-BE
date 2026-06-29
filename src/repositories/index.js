@@ -7,6 +7,7 @@ const contractRepository = require('./contractRepository');
 const locationRepository = require('./locationRepository');
 const notificationRepository = require('./notificationRepository');
 const chatRepository = require('./chatRepository');
+const refreshTokenRepository = require('./refreshTokenRepository');
 
 module.exports = {
     userRepository,
@@ -18,4 +19,5 @@ module.exports = {
     locationRepository,
     notificationRepository,
     chatRepository,
+    refreshTokenRepository,
 };

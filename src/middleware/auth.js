@@ -1,17 +1,16 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
+const { getAccessTokenFromRequest } = require('../utils/authCookies');
 
 const isAuthenticated = async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
+        const token = getAccessTokenFromRequest(req);
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        if (!token) {
             return res.status(401).json({ message: 'Không có quyền truy cập. Vui lòng đăng nhập.' });
         }
 
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
 
         if (!user || !user.is_active) {

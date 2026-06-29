@@ -9,6 +9,7 @@ const Contract = require('./Contract');
 const Notification = require('./Notification');
 const Conversation = require('./Conversation');
 const Message = require('./Message');
+const RefreshToken = require('./RefreshToken');
 
 module.exports = {
     User,
@@ -21,5 +22,6 @@ module.exports = {
     Contract,
     Notification,
     Conversation,
-    Message
+    Message,
+    RefreshToken,
 };

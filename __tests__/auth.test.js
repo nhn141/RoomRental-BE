@@ -6,8 +6,22 @@ const db = require('../src/db/db');
 
 const testHelper = new TestHelper();
 
+const getCookieNames = (response) => {
+    return (response.headers['set-cookie'] || []).map((cookie) => cookie.split('=')[0]);
+};
+
+const expectAuthCookies = (response) => {
+    expect(getCookieNames(response)).toEqual(expect.arrayContaining(['accessToken', 'refreshToken']));
+};
+
+const getAccessTokenCookieValue = (response) => {
+    const accessCookie = (response.headers['set-cookie'] || []).find((cookie) => cookie.startsWith('accessToken='));
+    return accessCookie?.split(';')[0].split('=').slice(1).join('=');
+};
+
 // Setup global: Tạo dữ liệu test 1 lần duy nhất cho toàn bộ file
 beforeAll(async () => {
+    await testHelper.ensureRefreshTokenTable();
     await testHelper.seedAuthTestUsers();
 }, 30000);
 
@@ -34,11 +48,12 @@ describe('Tenant Authentication', () => {
 
             // Assertions
             expect(response.body).toHaveProperty('message', 'Đăng nhập thành công');
-            expect(response.body).toHaveProperty('token');
+            expect(response.body).not.toHaveProperty('token');
             expect(response.body).toHaveProperty('user');
             expect(response.body.user).toHaveProperty('email', loginData.email);
             expect(response.body.user).toHaveProperty('role', 'tenant');
             expect(response.body.user).not.toHaveProperty('password_hash');
+            expectAuthCookies(response);
         });
 
         test('TC02: Login thất bại - thiếu email', async () => {
@@ -155,7 +170,7 @@ describe('Tenant Authentication', () => {
                 .send(loginData)
                 .expect(200);
 
-            const token = response.body.token;
+            const token = getAccessTokenCookieValue(response);
             expect(token).toBeTruthy();
 
             // Verify token structure
@@ -198,9 +213,10 @@ describe('Tenant Authentication', () => {
                 .expect(201);
 
             expect(response.body).toHaveProperty('message', 'Đăng ký tenant thành công');
-            expect(response.body).toHaveProperty('token');
+            expect(response.body).not.toHaveProperty('token');
             expect(response.body.user).toHaveProperty('email', registerData.email);
             expect(response.body.user).toHaveProperty('role', 'tenant');
+            expectAuthCookies(response);
 
             // Cleanup: Xóa user vừa tạo
             await db.query('DELETE FROM public.users WHERE email = $1', [registerData.email]);
@@ -285,8 +301,9 @@ describe('Landlord Authentication', () => {
                 .expect(200);
 
             expect(response.body).toHaveProperty('message', 'Đăng nhập thành công');
-            expect(response.body).toHaveProperty('token');
+            expect(response.body).not.toHaveProperty('token');
             expect(response.body.user).toHaveProperty('role', 'landlord');
+            expectAuthCookies(response);
         });
 
         test('TC17: Login thất bại - sử dụng tài khoản tenant', async () => {
@@ -320,8 +337,9 @@ describe('Landlord Authentication', () => {
                 .expect(201);
 
             expect(response.body).toHaveProperty('message', 'Đăng ký landlord thành công');
-            expect(response.body).toHaveProperty('token');
+            expect(response.body).not.toHaveProperty('token');
             expect(response.body.user).toHaveProperty('role', 'landlord');
+            expectAuthCookies(response);
 
             // Cleanup: Xóa user vừa tạo
             await db.query('DELETE FROM public.users WHERE email = $1', [registerData.email]);
@@ -360,8 +378,9 @@ describe('Admin Authentication', () => {
                 .expect(200);
 
             expect(response.body).toHaveProperty('message', 'Đăng nhập thành công');
-            expect(response.body).toHaveProperty('token');
+            expect(response.body).not.toHaveProperty('token');
             expect(response.body.user).toHaveProperty('role', 'admin');
+            expectAuthCookies(response);
         });
 
         test('TC21: Admin login thất bại - sử dụng tài khoản tenant', async () => {

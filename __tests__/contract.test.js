@@ -2,6 +2,7 @@
 const request = require('supertest');
 const app = require('../src/app');
 const TestHelper = require('./setup/testHelper');
+const { getAccessTokenCookieValue } = require('./setup/authCookieHelper');
 const db = require('../src/db/db');
 
 const testHelper = new TestHelper();
@@ -11,6 +12,7 @@ let validProvinceCode, validWardCode;
 
 // Setup: Tạo users, post, và approve post
 beforeAll(async () => {
+    await testHelper.ensureRefreshTokenTable();
     await testHelper.seedAuthTestUsers();
 
     // Tạo thêm tenant thứ 2
@@ -36,22 +38,22 @@ beforeAll(async () => {
     const tenantLogin = await request(app)
         .post('/api/auth/tenant/login')
         .send({ email: 'tenant@test.com', password: 'Test@123456' });
-    tenantToken = tenantLogin.body.token;
+    tenantToken = getAccessTokenCookieValue(tenantLogin);
 
     const tenant2Login = await request(app)
         .post('/api/auth/tenant/login')
         .send({ email: 'tenant2@test.com', password: 'Test@123456' });
-    tenant2Token = tenant2Login.body.token;
+    tenant2Token = getAccessTokenCookieValue(tenant2Login);
 
     const landlordLogin = await request(app)
         .post('/api/auth/landlord/login')
         .send({ email: 'landlord@test.com', password: 'Test@123456' });
-    landlordToken = landlordLogin.body.token;
+    landlordToken = getAccessTokenCookieValue(landlordLogin);
 
     const adminLogin = await request(app)
         .post('/api/auth/admin/login')
         .send({ email: 'admin@test.com', password: 'Test@123456' });
-    adminToken = adminLogin.body.token;
+    adminToken = getAccessTokenCookieValue(adminLogin);
 
     // Tạo và approve một bài đăng để test contract
     const postData = {

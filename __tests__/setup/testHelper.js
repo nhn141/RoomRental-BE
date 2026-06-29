@@ -7,15 +7,35 @@ class TestHelper {
         this.testUsers = [];
     }
 
-    // Tạo user test với password đã hash
+    async ensureRefreshTokenTable() {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS public.refresh_tokens (
+                id BIGSERIAL PRIMARY KEY,
+                user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL UNIQUE,
+                expires_at TIMESTAMPTZ NOT NULL,
+                revoked_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        `);
+
+        await db.query(`
+            CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id
+                ON public.refresh_tokens(user_id)
+        `);
+
+        await db.query(`
+            CREATE INDEX IF NOT EXISTS idx_refresh_tokens_active
+                ON public.refresh_tokens(token_hash, expires_at)
+                WHERE revoked_at IS NULL
+        `);
+    }
+
     async createTestUser(userData) {
         const { email, password, full_name, role } = userData;
 
-        // Hash password
-        const saltRounds = 10;
-        const password_hash = await bcrypt.hash(password, saltRounds);
+        const password_hash = await bcrypt.hash(password, 10);
 
-        // Tạo user
         const userResult = await db.query(
             `INSERT INTO public.users (email, password_hash, full_name, role, is_active)
              VALUES ($1, $2, $3, $4, $5)
@@ -26,13 +46,12 @@ class TestHelper {
         const user = userResult.rows[0];
         this.testUsers.push(user.id);
 
-        // Tạo record tương ứng theo role
         if (role === 'tenant') {
             await db.query(
                 `INSERT INTO public.tenants (user_id, phone_number, budget_min, budget_max)
                  VALUES ($1, $2, $3, $4)`,
                 [
-                    user.id, 
+                    user.id,
                     userData.phone_number || null,
                     userData.budget_min || 0,
                     userData.budget_max || 0
@@ -55,11 +74,9 @@ class TestHelper {
         return user;
     }
 
-    // Xóa tất cả user test đã tạo
     async cleanupTestUsers() {
         for (const userId of this.testUsers) {
             try {
-                // Xóa theo cascade sẽ tự động xóa tenant/landlord/admin
                 await db.query('DELETE FROM public.users WHERE id = $1', [userId]);
             } catch (err) {
                 console.error(`Error cleaning up user ${userId}:`, err.message);
@@ -68,9 +85,7 @@ class TestHelper {
         this.testUsers = [];
     }
 
-    // Tạo các user test mặc định cho authentication tests
     async seedAuthTestUsers() {
-        // 1. Tenant hợp lệ
         await this.createTestUser({
             email: 'tenant@test.com',
             password: 'Test@123456',
@@ -81,7 +96,6 @@ class TestHelper {
             budget_max: 8000000
         });
 
-        // 2. Landlord (để test cross-role)
         await this.createTestUser({
             email: 'landlord@test.com',
             password: 'Test@123456',
@@ -92,7 +106,6 @@ class TestHelper {
             address_detail: '123 Test Street'
         });
 
-        // 3. Admin (để test cross-role)
         await this.createTestUser({
             email: 'admin@test.com',
             password: 'Test@123456',
@@ -102,7 +115,6 @@ class TestHelper {
             phone_number: '0111222333'
         });
 
-        // 4. Inactive tenant
         await this.createTestUser({
             email: 'inactive@test.com',
             password: 'Test@123456',
@@ -111,10 +123,9 @@ class TestHelper {
             is_active: false
         });
 
-        console.log('✅ Test users created successfully');
+        console.log('Test users created successfully');
     }
 
-    // Đóng database connection
     async closeConnection() {
         if (!db.pool.ended) {
             await db.pool.end();
@@ -122,5 +133,4 @@ class TestHelper {
     }
 }
 
-// Export class để có thể new TestHelper()
 module.exports = TestHelper;

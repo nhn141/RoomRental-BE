@@ -11,6 +11,9 @@ router.post('/landlord/login', (req, res) => authController.login(req, res, 'lan
 
 router.post('/admin/login', (req, res) => authController.login(req, res, 'admin'));
 
+router.post('/refresh', (req, res) => authController.refresh(req, res));
+router.post('/logout', (req, res) => authController.logout(req, res));
+
 router.post('/forgot-password', (req, res) => authController.forgotPassword(req, res));
 router.post('/reset-password/:token', (req, res) => authController.resetPassword(req, res));
 
